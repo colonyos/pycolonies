@@ -31,9 +31,3 @@ class Crypto:
     def recoverid(self, data, prvkey):
         id = self.c_lib.recoverid(data.encode('utf-8'), prvkey.encode('utf-8'))
         return id.decode("utf-8")
-
-if __name__ == "__main__":
-    crypto = Crypto()
-    print(crypto.hash("hej"))
-
-
