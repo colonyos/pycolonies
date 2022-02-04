@@ -28,6 +28,13 @@ class TestColonies(unittest.TestCase):
         server_prv = "09545df1812e252a2a853cca29d7eace4a3fe2baad334e3b7141a98d43c31e7c"  # note last c, incorrect key
         with self.assertRaises(Exception): 
             client.add_colony(colony, server_prv)
+    
+    def test_del_colony(self):
+        url = "https://10.0.0.240:8080/api"
+        client = Colonies(url)
+        server_prv = "09545df1812e252a2a853cca29d7eace4a3fe2baad334e3b7141a98d43c31e7b"
+        colonyid = "09545df1812e252a2a853cca29d7eace4a3fe2baad334e3b7141a98d43c31e7b"
+        client.del_colony(colonyid, server_prv)
 
 
 if __name__ == '__main__':
