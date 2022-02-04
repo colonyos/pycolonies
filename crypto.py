@@ -1,0 +1,39 @@
+import ctypes
+import pathlib
+
+class Crypto:
+
+    def __init__(self):
+        libname = pathlib.Path().absolute() / "lib/cryptolib.so"
+        self.c_lib = ctypes.CDLL(libname)
+        self.c_lib.prvkey.restype = ctypes.c_char_p
+        self.c_lib.id.restype = ctypes.c_char_p
+        self.c_lib.sign.restype = ctypes.c_char_p
+        self.c_lib.hash.restype = ctypes.c_char_p
+        self.c_lib.recoverid.restype = ctypes.c_char_p
+    
+    def prvkey(self):
+        k = self.c_lib.prvkey()
+        return k.decode("utf-8")
+    
+    def id(self, id):
+        h = self.c_lib.id(id.encode('utf-8'))
+        return h.decode("utf-8")
+
+    def hash(self, data):
+        h = self.c_lib.hash(data.encode('utf-8'))
+        return h.decode("utf-8")
+    
+    def sign(self, data, prvkey):
+        s = self.c_lib.sign(data.encode('utf-8'), prvkey.encode('utf-8'))
+        return s.decode("utf-8")
+    
+    def recoverid(self, data, prvkey):
+        id = self.c_lib.recoverid(data.encode('utf-8'), prvkey.encode('utf-8'))
+        return id.decode("utf-8")
+
+if __name__ == "__main__":
+    crypto = Crypto()
+    print(crypto.hash("hej"))
+
+
