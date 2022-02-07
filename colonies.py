@@ -129,3 +129,44 @@ class Colonies:
             "state": state
         }
         return self.__rpc(msg, prvkey)
+    
+    def get_process(self, processid, prvkey):
+        msg = {
+            "msgtype": "getprocessmsg",
+            "processid": processid
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def delete_process(self, processid, prvkey):
+        msg = {
+            "msgtype": "deleteprocessmsg",
+            "processid": processid
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def close(self, processid, successful, prvkey):
+        if successful:
+            msg = {
+                "msgtype": "closesuccessfulmsg",
+                "processid": processid
+            }
+        else: 
+            msg = {
+                "msgtype": "closefailedmsg",
+                "processid": processid
+            }
+
+        return self.__rpc(msg, prvkey)
+    
+    def add_attribute(self, processid, key, value, prvkey):
+        attribute = {}
+        attribute["key"] = key 
+        attribute["value"] = value
+        attribute["targetid"] = processid
+        attribute["attributetype"] = 1
+       
+        msg = {
+            "msgtype": "addattributemsg",
+            "attribute": attribute
+        }
+        return self.__rpc(msg, prvkey)

@@ -57,7 +57,7 @@ class TestColonies(unittest.TestCase):
         }
     
         return self.client.submit_process_spec(process_spec, runtime_prvkey)
-
+    
     def test_add_colony(self):
         added_colony, colonyid, _ = self.add_test_colony()
         self.assertEqual(added_colony["colonyid"], colonyid)
@@ -171,6 +171,80 @@ class TestColonies(unittest.TestCase):
         self.assertEqual(len(waiting_processes), 2)
 
         self.client.del_colony(colonyid, self.server_prv)
+    
+    def test_get_process(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_runtime, runtimeid, runtime_prvkey = self.add_test_runtime(colonyid, colony_prvkey)
+        self.client.approve_runtime(runtimeid, colony_prvkey)
+ 
+        submitted_process = self.submit_test_process(colonyid, runtime_prvkey)
 
+        process = self.client.get_process(submitted_process["processid"], runtime_prvkey)
+        self.assertEqual(process["processid"], submitted_process["processid"])
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
+    def test_delete_process(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_runtime, runtimeid, runtime_prvkey = self.add_test_runtime(colonyid, colony_prvkey)
+        self.client.approve_runtime(runtimeid, colony_prvkey)
+ 
+        submitted_process = self.submit_test_process(colonyid, runtime_prvkey)
+        
+        self.client.delete_process(submitted_process["processid"], runtime_prvkey)
+
+        with self.assertRaises(Exception): 
+            self.client.get_process(submitted_process["processid"], runtime_prvkey)
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
+    def test_close_process(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_runtime, runtimeid, runtime_prvkey = self.add_test_runtime(colonyid, colony_prvkey)
+        self.client.approve_runtime(runtimeid, colony_prvkey)
+ 
+        submitted_process1 = self.submit_test_process(colonyid, runtime_prvkey)
+        submitted_process2 = self.submit_test_process(colonyid, runtime_prvkey)
+        submitted_process3 = self.submit_test_process(colonyid, runtime_prvkey)
+        submitted_process4 = self.submit_test_process(colonyid, runtime_prvkey)
+
+        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, runtime_prvkey)
+
+        self.client.close(submitted_process1["processid"], True, runtime_prvkey)
+        self.client.close(submitted_process2["processid"], False, runtime_prvkey)
+
+        waiting_processes = self.client.list_processes(colonyid, 2, 0, runtime_prvkey)
+        running_processes = self.client.list_processes(colonyid, 2, 1, runtime_prvkey)
+        successful_processes = self.client.list_processes(colonyid, 2, 2, runtime_prvkey)
+        failed_processes = self.client.list_processes(colonyid, 2, 3, runtime_prvkey)
+
+        self.assertEqual(len(waiting_processes), 1)
+        self.assertEqual(len(running_processes), 1)
+        self.assertEqual(len(successful_processes), 1)
+        self.assertEqual(len(failed_processes), 1)
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
+    def test_add_attribute(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_runtime, runtimeid, runtime_prvkey = self.add_test_runtime(colonyid, colony_prvkey)
+        self.client.approve_runtime(runtimeid, colony_prvkey)
+ 
+        submitted_process = self.submit_test_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, runtime_prvkey)
+
+        self.client.add_attribute(submitted_process["processid"], "py_test_key", "py_test_value", runtime_prvkey)
+        
+        process = self.client.get_process(submitted_process["processid"], runtime_prvkey)
+        found = False
+        for attr in process["attributes"]:
+            if attr["key"] == "py_test_key" and attr["value"] == "py_test_value":
+                found = True
+        self.assertTrue(found)
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
 if __name__ == '__main__':
     unittest.main()
