@@ -246,5 +246,19 @@ class TestColonies(unittest.TestCase):
 
         self.client.del_colony(colonyid, self.server_prv)
     
+    def test_get_attribute(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_runtime, runtimeid, runtime_prvkey = self.add_test_runtime(colonyid, colony_prvkey)
+        self.client.approve_runtime(runtimeid, colony_prvkey)
+ 
+        submitted_process = self.submit_test_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, runtime_prvkey)
+
+        attribute = self.client.add_attribute(submitted_process["processid"], "py_test_key", "py_test_value", runtime_prvkey)
+        attribute_from_server = self.client.get_attribute(attribute["attributeid"], runtime_prvkey)
+        self.assertEqual(attribute_from_server["attributeid"], attribute["attributeid"])
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
 if __name__ == '__main__':
     unittest.main()

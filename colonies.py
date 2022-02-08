@@ -170,3 +170,10 @@ class Colonies:
             "attribute": attribute
         }
         return self.__rpc(msg, prvkey)
+    
+    def get_attribute(self, attributeid, prvkey):
+        msg = {
+            "msgtype": "getattributemsg",
+            "attributeid": attributeid
+        }
+        return self.__rpc(msg, prvkey)
