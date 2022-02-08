@@ -3,12 +3,10 @@ import pathlib
 import os
 
 class Crypto:
-
     def __init__(self):
         libname = os.environ.get("CRYPTOLIB")
         if libname == None:
             libname = "/usr/lib/cryptolib.so"
-        print(libname)
         self.c_lib = ctypes.CDLL(libname)
         self.c_lib.prvkey.restype = ctypes.c_char_p
         self.c_lib.id.restype = ctypes.c_char_p

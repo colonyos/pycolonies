@@ -167,7 +167,7 @@ class TestColonies(unittest.TestCase):
         self.submit_test_process(colonyid, runtime_prvkey)
         self.submit_test_process(colonyid, runtime_prvkey)
 
-        waiting_processes = self.client.list_processes(colonyid, 2, 0, runtime_prvkey)
+        waiting_processes = self.client.list_processes(colonyid, 2, Colonies.WAITING, runtime_prvkey)
         self.assertEqual(len(waiting_processes), 2)
 
         self.client.del_colony(colonyid, self.server_prv)
@@ -215,15 +215,49 @@ class TestColonies(unittest.TestCase):
         self.client.close(submitted_process1["processid"], True, runtime_prvkey)
         self.client.close(submitted_process2["processid"], False, runtime_prvkey)
 
-        waiting_processes = self.client.list_processes(colonyid, 2, 0, runtime_prvkey)
-        running_processes = self.client.list_processes(colonyid, 2, 1, runtime_prvkey)
-        successful_processes = self.client.list_processes(colonyid, 2, 2, runtime_prvkey)
-        failed_processes = self.client.list_processes(colonyid, 2, 3, runtime_prvkey)
+        waiting_processes = self.client.list_processes(colonyid, 2, Colonies.WAITING, runtime_prvkey)
+        running_processes = self.client.list_processes(colonyid, 2, Colonies.RUNNING, runtime_prvkey)
+        successful_processes = self.client.list_processes(colonyid, 2, Colonies.SUCCESSFUL, runtime_prvkey)
+        failed_processes = self.client.list_processes(colonyid, 2, Colonies.FAILED, runtime_prvkey)
 
         self.assertEqual(len(waiting_processes), 1)
         self.assertEqual(len(running_processes), 1)
         self.assertEqual(len(successful_processes), 1)
         self.assertEqual(len(failed_processes), 1)
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
+    def test_stats(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_runtime, runtimeid, runtime_prvkey = self.add_test_runtime(colonyid, colony_prvkey)
+        self.client.approve_runtime(runtimeid, colony_prvkey)
+ 
+        submitted_process1 = self.submit_test_process(colonyid, runtime_prvkey)
+        submitted_process2 = self.submit_test_process(colonyid, runtime_prvkey)
+        submitted_process3 = self.submit_test_process(colonyid, runtime_prvkey)
+        submitted_process4 = self.submit_test_process(colonyid, runtime_prvkey)
+
+        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, runtime_prvkey)
+        
+        self.client.close(submitted_process1["processid"], True, runtime_prvkey)
+        self.client.close(submitted_process2["processid"], False, runtime_prvkey)
+        
+        waiting_processes = self.client.list_processes(colonyid, 2, 0, runtime_prvkey)
+        running_processes = self.client.list_processes(colonyid, 2, 1, runtime_prvkey)
+        successful_processes = self.client.list_processes(colonyid, 2, 2, runtime_prvkey)
+        failed_processes = self.client.list_processes(colonyid, 2, 3, runtime_prvkey)
+
+        self.client.close(submitted_process1["processid"], True, runtime_prvkey)
+        self.client.close(submitted_process2["processid"], False, runtime_prvkey)
+
+        stats = self.client.stats(colonyid, runtime_prvkey)
+
+        self.assertEqual(len(waiting_processes), stats["waiting"])
+        self.assertEqual(len(running_processes), stats["running"])
+        self.assertEqual(len(successful_processes), stats["success"])
+        self.assertEqual(len(failed_processes), stats["failed"])
 
         self.client.del_colony(colonyid, self.server_prv)
     

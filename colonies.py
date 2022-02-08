@@ -5,8 +5,13 @@ sys.path.append(".")
 from crypto import Crypto
 import base64
 
-class Colonies:
 
+class Colonies:
+    WAITING = 0
+    RUNNING = 1
+    SUCCESSFUL = 2
+    FAILED = 3
+    
     def __init__(self, url):
         self.url = "https://10.0.0.240:8080/api"
         pass
@@ -117,10 +122,6 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
   
-    # state 0 : Waiting
-    # state 1 : Running
-    # state 2 : Success
-    # state 3 : Failed
     def list_processes(self, colonyid, count, state, prvkey):
         msg = {
             "msgtype": "getprocessesmsg",
@@ -156,6 +157,13 @@ class Colonies:
                 "processid": processid
             }
 
+        return self.__rpc(msg, prvkey)
+    
+    def stats(self, colonyid, prvkey):
+        msg = {
+            "msgtype": "getprocstatmsg",
+            "colonyid": colonyid
+        }
         return self.__rpc(msg, prvkey)
     
     def add_attribute(self, processid, key, value, prvkey):
