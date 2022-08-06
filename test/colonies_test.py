@@ -1,15 +1,17 @@
 import unittest
 import sys
+import string
+import random
 sys.path.append(".")
 from crypto import Crypto
 from colonies import Colonies
 
 class TestColonies(unittest.TestCase):
     def setUp(self):
-        url = "https://10.0.0.240:8080/api"
+        url = "http://localhost:50080/api"
         self.client = Colonies(url)
         self.crypto = Crypto()
-        self.server_prv = "09545df1812e252a2a853cca29d7eace4a3fe2baad334e3b7141a98d43c31e7b"
+        self.server_prv = "fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d"
 
     def add_test_colony(self):
         colony_prvkey = self.crypto.prvkey()
@@ -25,8 +27,10 @@ class TestColonies(unittest.TestCase):
         runtime_prvkey = self.crypto.prvkey()
         runtimeid = self.crypto.id(runtime_prvkey)
 
+        ran = ''.join(random.choices(string.ascii_uppercase + string.digits, k = 10))
+
         runtime = {
-            "name": "test_runtime",
+            "name": "test_runtime_" + ran,
             "runtimeid": runtimeid,
             "colonyid": colonyid,
             "runtimetype": "test_runtime_type",
@@ -45,14 +49,11 @@ class TestColonies(unittest.TestCase):
                 "colonyid": colonyid,
                 "runtimeids": [],
                 "runtimetype": "test_runtime_type",
-                "mem": 1000,
-                "cores": 1,
-                "gpus":0
             },
             "env": {
                 "test_key": "test_value2"
             },
-            "timeout": -1,
+            "maxexectime": -1,
             "maxretries": 3
         }
     
@@ -154,7 +155,7 @@ class TestColonies(unittest.TestCase):
         self.client.approve_runtime(runtimeid, colony_prvkey)
         process = self.submit_test_process(colonyid, runtime_prvkey)
        
-        assigned_process = self.client.assign_process(colonyid, runtime_prvkey)
+        assigned_process = self.client.assign_process(colonyid, 10, runtime_prvkey)
         self.assertEqual(assigned_process["processid"], process["processid"])
 
         self.client.del_colony(colonyid, self.server_prv)
@@ -208,9 +209,9 @@ class TestColonies(unittest.TestCase):
         submitted_process3 = self.submit_test_process(colonyid, runtime_prvkey)
         submitted_process4 = self.submit_test_process(colonyid, runtime_prvkey)
 
-        self.client.assign_process(colonyid, runtime_prvkey)
-        self.client.assign_process(colonyid, runtime_prvkey)
-        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
 
         self.client.close(submitted_process1["processid"], True, runtime_prvkey)
         self.client.close(submitted_process2["processid"], False, runtime_prvkey)
@@ -237,9 +238,9 @@ class TestColonies(unittest.TestCase):
         submitted_process3 = self.submit_test_process(colonyid, runtime_prvkey)
         submitted_process4 = self.submit_test_process(colonyid, runtime_prvkey)
 
-        self.client.assign_process(colonyid, runtime_prvkey)
-        self.client.assign_process(colonyid, runtime_prvkey)
-        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
         
         self.client.close(submitted_process1["processid"], True, runtime_prvkey)
         self.client.close(submitted_process2["processid"], False, runtime_prvkey)
@@ -249,15 +250,12 @@ class TestColonies(unittest.TestCase):
         successful_processes = self.client.list_processes(colonyid, 2, 2, runtime_prvkey)
         failed_processes = self.client.list_processes(colonyid, 2, 3, runtime_prvkey)
 
-        self.client.close(submitted_process1["processid"], True, runtime_prvkey)
-        self.client.close(submitted_process2["processid"], False, runtime_prvkey)
-
         stats = self.client.stats(colonyid, runtime_prvkey)
 
-        self.assertEqual(len(waiting_processes), stats["waiting"])
-        self.assertEqual(len(running_processes), stats["running"])
-        self.assertEqual(len(successful_processes), stats["success"])
-        self.assertEqual(len(failed_processes), stats["failed"])
+        self.assertEqual(len(waiting_processes), stats["waitingprocesses"])
+        self.assertEqual(len(running_processes), stats["runningprocesses"])
+        self.assertEqual(len(successful_processes), stats["successfulprocesses"])
+        self.assertEqual(len(failed_processes), stats["failedprocesses"])
 
         self.client.del_colony(colonyid, self.server_prv)
     
@@ -267,7 +265,7 @@ class TestColonies(unittest.TestCase):
         self.client.approve_runtime(runtimeid, colony_prvkey)
  
         submitted_process = self.submit_test_process(colonyid, runtime_prvkey)
-        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
 
         self.client.add_attribute(submitted_process["processid"], "py_test_key", "py_test_value", runtime_prvkey)
         
@@ -286,7 +284,7 @@ class TestColonies(unittest.TestCase):
         self.client.approve_runtime(runtimeid, colony_prvkey)
  
         submitted_process = self.submit_test_process(colonyid, runtime_prvkey)
-        self.client.assign_process(colonyid, runtime_prvkey)
+        self.client.assign_process(colonyid, 10, runtime_prvkey)
 
         attribute = self.client.add_attribute(submitted_process["processid"], "py_test_key", "py_test_value", runtime_prvkey)
         attribute_from_server = self.client.get_attribute(attribute["attributeid"], runtime_prvkey)

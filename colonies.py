@@ -13,7 +13,7 @@ class Colonies:
     FAILED = 3
     
     def __init__(self, url):
-        self.url = "https://10.0.0.240:8080/api"
+        self.url = url
         pass
     
     def __rpc(self, msg, prvkey):
@@ -115,9 +115,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def assign_process(self, colonyid, prvkey):
+    def assign_process(self, colonyid, timeout, prvkey):
         msg = {
             "msgtype": "assignprocessmsg",
+            "timeout": timeout,
             "colonyid": colonyid
         }
         return self.__rpc(msg, prvkey)
@@ -161,7 +162,7 @@ class Colonies:
     
     def stats(self, colonyid, prvkey):
         msg = {
-            "msgtype": "getprocstatmsg",
+            "msgtype": "getcolonystatsmsg",
             "colonyid": colonyid
         }
         return self.__rpc(msg, prvkey)

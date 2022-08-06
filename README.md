@@ -1,7 +1,7 @@
 # Introduction
-This repo contains a Python implementation of the [ColonyRuntime API](https://github.com/colonyos/colonies), making it possible to implement Colony applications in Python.
+This repo contains a Python implementation of the [ColonyRuntime API](https://github.com/colonyos/colonies), making it possible to implement Colonies workers in Python.
 
-The library assumes *cryptolib.so* is installed in */usr/lib*. However, it is also possible to set the path the cryptolib.so using an environmental variable.
+The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path the cryptolib.so using an environmental variable.
 ```bash
 export CRYPTOLIB=".../colonies/lib/cryptolib.so"
 ```
