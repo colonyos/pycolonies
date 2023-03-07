@@ -73,49 +73,49 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def add_runtime(self, runtime, prvkey):
+    def add_executor(self, executor, prvkey):
         msg = {
-            "msgtype": "addruntimemsg",
-            "runtime": runtime
+            "msgtype": "addexecutormsg",
+            "executor": executor 
         }
         return self.__rpc(msg, prvkey)
     
-    def list_runtimes(self, colonyid, prvkey):
+    def list_executors(self, colonyid, prvkey):
         msg = {
-            "msgtype": "getruntimesmsg",
+            "msgtype": "getexecutorsmsg",
             "colonyid": colonyid
         }
         return self.__rpc(msg, prvkey)
     
-    def approve_runtime(self, runtimeid, prvkey):
+    def approve_executor(self, executorid, prvkey):
         msg = {
-            "msgtype": "approveruntimemsg",
-            "runtimeid": runtimeid
+            "msgtype": "approveexecutormsg",
+            "executorid": executorid
         }
         return self.__rpc(msg, prvkey)
     
-    def reject_runtime(self, runtimeid, prvkey):
+    def reject_executor(self, executorid, prvkey):
         msg = {
-            "msgtype": "rejectruntimemsg",
-            "runtimeid": runtimeid
+            "msgtype": "rejectexecutormsg",
+            "executorid": executorid
         }
         return self.__rpc(msg, prvkey)
     
-    def delete_runtime(self, runtimeid, prvkey):
+    def delete_executor(self, executorid, prvkey):
         msg = {
-            "msgtype": "deleteruntimemsg",
-            "runtimeid": runtimeid
+            "msgtype": "deleteexecutormsg",
+            "executorid": executorid
         }
         return self.__rpc(msg, prvkey)
     
-    def submit_process_spec(self, process_spec, prvkey):
+    def submit(self, func_spec, prvkey):
         msg = {
-            "msgtype": "submitprocessespecmsg",
-            "spec": process_spec
+            "msgtype": "submitfuncspecmsg",
+            "spec": func_spec
         }
         return self.__rpc(msg, prvkey)
     
-    def assign_process(self, colonyid, timeout, prvkey):
+    def assign(self, colonyid, timeout, prvkey):
         msg = {
             "msgtype": "assignprocessmsg",
             "timeout": timeout,
