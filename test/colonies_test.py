@@ -205,8 +205,8 @@ class TestColonies(unittest.TestCase):
         self.client.assign(colonyid, 10, executor_prvkey)
         self.client.assign(colonyid, 10, executor_prvkey)
 
-        self.client.close(submitted_process1["processid"], True, executor_prvkey)
-        self.client.close(submitted_process2["processid"], False, executor_prvkey)
+        self.client.close(submitted_process1["processid"], [], executor_prvkey)
+        self.client.fail(submitted_process2["processid"], [], executor_prvkey)
 
         waiting_processes = self.client.list_processes(colonyid, 2, Colonies.WAITING, executor_prvkey)
         running_processes = self.client.list_processes(colonyid, 2, Colonies.RUNNING, executor_prvkey)
@@ -234,8 +234,8 @@ class TestColonies(unittest.TestCase):
         self.client.assign(colonyid, 10, executor_prvkey)
         self.client.assign(colonyid, 10, executor_prvkey)
         
-        self.client.close(submitted_process1["processid"], True, executor_prvkey)
-        self.client.close(submitted_process2["processid"], False, executor_prvkey)
+        self.client.close(submitted_process1["processid"], [], executor_prvkey)
+        self.client.fail(submitted_process2["processid"], [], executor_prvkey)
         
         waiting_processes = self.client.list_processes(colonyid, 2, 0, executor_prvkey)
         running_processes = self.client.list_processes(colonyid, 2, 1, executor_prvkey)

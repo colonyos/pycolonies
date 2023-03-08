@@ -146,17 +146,21 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def close(self, processid, successful, prvkey):
-        if successful:
-            msg = {
-                "msgtype": "closesuccessfulmsg",
-                "processid": processid
-            }
-        else: 
-            msg = {
-                "msgtype": "closefailedmsg",
-                "processid": processid
-            }
+    def close(self, processid, output, prvkey):
+        msg = {
+            "msgtype": "closesuccessfulmsg",
+            "processid": processid,
+            "out": output
+        }
+
+        return self.__rpc(msg, prvkey)
+    
+    def fail(self, processid, errors, prvkey):
+        msg = {
+            "msgtype": "closefailedmsg",
+            "processid": processid,
+            "errors": errors 
+        }
 
         return self.__rpc(msg, prvkey)
     
