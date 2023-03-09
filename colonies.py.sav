@@ -4,6 +4,8 @@ import sys
 sys.path.append(".")
 from crypto import Crypto
 import base64
+import asyncio
+import websockets
 from websocket import create_connection
 
 class Colonies:
@@ -12,15 +14,17 @@ class Colonies:
     SUCCESSFUL = 2
     FAILED = 3
     
-    def __init__(self, host, port):
+    def __init__(self, host, port, prvkey):
         self.url = "http://" + host + ":" + str(port) + "/api"
         self.host = host
         self.port = port
+        self.prvkey = prvkey
+        pass
     
-    def __rpc(self, msg, prvkey):
+    def __rpc(self, msg):
         payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
         crypto = Crypto()
-        signature = crypto.sign(payload, prvkey)
+        signature = crypto.sign(payload, self.prvkey)
 
         rpc = {
             "payloadtype" : msg["msgtype"],
@@ -39,8 +43,8 @@ class Colonies:
             return payload
         else:
             raise Exception(payload["message"])
-    
-    def wait(self, process, timeout, prvkey):
+
+    def wait(self, process, timeout):
         processid = process["processid"]
         executortype = process["spec"]["conditions"]["executortype"]
         state = 2
@@ -60,7 +64,7 @@ class Colonies:
 
         rpcmsg["payload"] = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
         crypto = Crypto()
-        rpcmsg["signature"] = crypto.sign(rpcmsg["payload"], prvkey) 
+        rpcmsg["signature"] = crypto.sign(rpcmsg["payload"], self.prvkey) 
 
         ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
         ws.send(json.dumps(rpcmsg))
@@ -70,139 +74,139 @@ class Colonies:
         process = base64.b64decode(replymsg["payload"])
         return json.loads(process)
 
-    def add_colony(self, colony, prvkey):
+    def add_colony(self, colony):
         msg = {
             "msgtype": "addcolonymsg",
             "colony": colony
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def del_colony(self, colonyid, prvkey):
+    def del_colony(self, colonyid):
         msg = {
             "msgtype": "deletecolonymsg",
             "colonyid": colonyid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def list_colonies(self, prvkey):
+    def list_colonies(self):
         msg = {
             "msgtype": "getcoloniesmsg",
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def get_colony(self, colonyid, prvkey):
+    def get_colony(self, colonyid):
         msg = {
             "msgtype": "getcolonymsg",
             "colonyid": colonyid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def get_colony(self, colonyid, prvkey):
+    def get_colony(self, colonyid):
         msg = {
             "msgtype": "getcolonymsg",
             "colonyid": colonyid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def add_executor(self, executor, prvkey):
+    def add_executor(self, executor):
         msg = {
             "msgtype": "addexecutormsg",
             "executor": executor 
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def list_executors(self, colonyid, prvkey):
+    def list_executors(self, colonyid):
         msg = {
             "msgtype": "getexecutorsmsg",
             "colonyid": colonyid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def approve_executor(self, executorid, prvkey):
+    def approve_executor(self, executorid):
         msg = {
             "msgtype": "approveexecutormsg",
             "executorid": executorid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def reject_executor(self, executorid, prvkey):
+    def reject_executor(self, executorid):
         msg = {
             "msgtype": "rejectexecutormsg",
             "executorid": executorid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def delete_executor(self, executorid, prvkey):
+    def delete_executor(self, executorid):
         msg = {
             "msgtype": "deleteexecutormsg",
             "executorid": executorid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def submit(self, func_spec, prvkey):
+    def submit(self, func_spec):
         msg = {
             "msgtype": "submitfuncspecmsg",
             "spec": func_spec
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def assign(self, colonyid, timeout, prvkey):
+    def assign(self, colonyid, timeout):
         msg = {
             "msgtype": "assignprocessmsg",
             "timeout": timeout,
             "colonyid": colonyid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
   
-    def list_processes(self, colonyid, count, state, prvkey):
+    def list_processes(self, colonyid, count, state):
         msg = {
             "msgtype": "getprocessesmsg",
             "colonyid": colonyid,
             "count": count,
             "state": state
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def get_process(self, processid, prvkey):
+    def get_process(self, processid):
         msg = {
             "msgtype": "getprocessmsg",
             "processid": processid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def delete_process(self, processid, prvkey):
+    def delete_process(self, processid):
         msg = {
             "msgtype": "deleteprocessmsg",
             "processid": processid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def close(self, processid, output, prvkey):
+    def close(self, processid, output):
         msg = {
             "msgtype": "closesuccessfulmsg",
             "processid": processid,
             "out": output
         }
 
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def fail(self, processid, errors, prvkey):
+    def fail(self, processid, errors):
         msg = {
             "msgtype": "closefailedmsg",
             "processid": processid,
             "errors": errors 
         }
 
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def stats(self, colonyid, prvkey):
+    def stats(self, colonyid):
         msg = {
             "msgtype": "getcolonystatsmsg",
             "colonyid": colonyid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def add_attribute(self, processid, key, value, prvkey):
+    def add_attribute(self, processid, key, value):
         attribute = {}
         attribute["key"] = key 
         attribute["value"] = value
@@ -213,11 +217,11 @@ class Colonies:
             "msgtype": "addattributemsg",
             "attribute": attribute
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)
     
-    def get_attribute(self, attributeid, prvkey):
+    def get_attribute(self, attributeid):
         msg = {
             "msgtype": "getattributemsg",
             "attributeid": attributeid
         }
-        return self.__rpc(msg, prvkey)
+        return self.__rpc(msg)

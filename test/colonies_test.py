@@ -8,8 +8,7 @@ from colonies import Colonies
 
 class TestColonies(unittest.TestCase):
     def setUp(self):
-        url = "http://localhost:50080/api"
-        self.client = Colonies(url)
+        self.client = Colonies("localhost", 50080)
         self.crypto = Crypto()
         self.server_prv = "fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d"
 

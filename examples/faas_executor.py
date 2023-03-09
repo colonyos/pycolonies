@@ -6,12 +6,17 @@ import signal
 import base64 
 import os
 
+def print_to_string(*args, **kwargs):
+    newstr = ""
+    for a in args:
+        newstr+=str(a)+' '
+    return newstr
+
 class PythonExecutor:
     def __init__(self):
-        url = "http://localhost:50080/api"
-        self.client = Colonies(url)
+        #url = "http://localhost:50080/api"
+        self.client = Colonies("localhost", 50080)
         crypto = Crypto()
-        self.client = Colonies(url)
         self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
         self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
@@ -46,8 +51,10 @@ class PythonExecutor:
                 exec(code)
                 funcname = assigned_process["spec"]["funcname"]
                 args = assigned_process["spec"]["args"]
-                args_str = ','.join(args)
-                res = eval(funcname+'("a", "b")') 
+                formatedArgsStr = print_to_string(args)
+                formatedArgsStr = formatedArgsStr.replace('[', '')
+                formatedArgsStr = formatedArgsStr.replace(']', '')
+                res = eval(funcname+'(' + formatedArgsStr + ')') 
                 self.client.close(assigned_process["processid"], [res], self.executor_prvkey)
             except Exception as err:
                 print(err)
