@@ -3,7 +3,7 @@ sys.path.append(".")
 import base64
 import inspect
 
-def create_func_spec(func, args, colonyid):
+def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, maxretries, maxwaittime):
     code = inspect.getsource(func)
     code_bytes = code.encode("ascii")
     code_base64_bytes = base64.b64encode(code_bytes)
@@ -17,14 +17,14 @@ def create_func_spec(func, args, colonyid):
         "nodename": funcname,
         "funcname": funcname,
         "args": args,
-        "priority": 0,
-        "maxwaittime": -1,
-        "maxexectime": 10,
-        "maxretries": 3,
+        "priority": priority,
+        "maxwaittime": maxwaittime,
+        "maxexectime": maxexectime,
+        "maxretries": maxretries,
         "conditions": {
             "colonyid": colonyid,
             "executorids": [],
-            "executortype": "faas",
+            "executortype": executortype,
         },
         "label": "",
         "env": {

@@ -64,11 +64,9 @@ class Colonies:
 
         ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
         ws.send(json.dumps(rpcmsg))
-        replymsg_json = ws.recv()
+        ws.recv()
 
-        replymsg = json.loads(replymsg_json)
-        process = base64.b64decode(replymsg["payload"])
-        return json.loads(process)
+        return self.get_process(process["processid"], prvkey)
 
     def add_colony(self, colony, prvkey):
         msg = {

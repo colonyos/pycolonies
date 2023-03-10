@@ -1,7 +1,8 @@
 import sys
 sys.path.append(".")
 from colonies import Colonies
-from utils import create_func_spec 
+from utils import create_func_spec
+from faas_executor import formatargs 
 
 #url = "http://localhost:50080/api"
 client = Colonies("localhost", 50080)
@@ -14,10 +15,17 @@ def foo(arg1, arg2):
     a = arg1 + arg2         
     return a  
 
-func_spec = create_func_spec(foo, [1, 2], colonyid)
+func_spec = create_func_spec(func=foo, 
+                             # args=["higher", "priority"], 
+                             args=[1, 2], 
+                             colonyid=colonyid, 
+                             executortype="faas",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 process = client.submit(func_spec, executor_prvkey)
 print("Process", process["processid"], "submitted")
+process = client.wait(process, 8, executor_prvkey)
 
-client.wait(process, 8, executor_prvkey)
-process = client.get_process(process["processid"], executor_prvkey)
-print(process["out"])
+print("Result:", func_spec["funcname"] + "(" + formatargs(func_spec["args"]) + ") -> ", process["out"][0])

@@ -6,15 +6,22 @@ import signal
 import base64 
 import os
 
-def print_to_string(*args, **kwargs):
-    newstr = ""
+def formatargs(args):
+    s = ""
     for a in args:
-        newstr+=str(a)+' '
-    return newstr
+        s+=str(a)+', '
+               
+    s = s.replace('[', '')
+    s = s.replace(']', '')
+    s = s.strip()
+    
+    if len(s)>0 and s[len(s)-1] == ",":
+        s = s[:len(s)-1]
+    
+    return s
 
 class PythonExecutor:
     def __init__(self):
-        #url = "http://localhost:50080/api"
         self.client = Colonies("localhost", 50080)
         crypto = Crypto()
         self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
@@ -43,18 +50,19 @@ class PythonExecutor:
         while (True):
             try:
                 assigned_process = self.client.assign(self.colonyid, 10, self.executor_prvkey)
-                print(assigned_process["processid"], "is assigned to executor")
+                print()
+                print("Process", assigned_process["processid"], "is assigned to Executor")
 
                 code_base64 = assigned_process["spec"]["env"]["code"]
                 code_bytes2 = base64.b64decode(code_base64)
                 code = code_bytes2.decode("ascii")
                 exec(code)
-                funcname = assigned_process["spec"]["funcname"]
-                args = assigned_process["spec"]["args"]
-                formatedArgsStr = print_to_string(args)
-                formatedArgsStr = formatedArgsStr.replace('[', '')
-                formatedArgsStr = formatedArgsStr.replace(']', '')
-                res = eval(funcname+'(' + formatedArgsStr + ')') 
+                funcspec = assigned_process["spec"]
+                funcname = funcspec["funcname"]
+                args = funcspec["args"]
+                formated_args = formatargs(args)
+                print("Executing:", funcspec["funcname"] + "(" + formatargs(funcspec["args"]) + ")")
+                res = eval(funcname+'(' + formated_args + ')')
                 self.client.close(assigned_process["processid"], [res], self.executor_prvkey)
             except Exception as err:
                 print(err)
