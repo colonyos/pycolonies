@@ -6,6 +6,12 @@ from crypto import Crypto
 import base64
 from websocket import create_connection
 
+class ColoniesConnectionError(Exception):
+    pass
+
+class ColoniesError(Exception):
+    pass
+
 class Colonies:
     WAITING = 0
     RUNNING = 1
@@ -29,16 +35,21 @@ class Colonies:
         }
 
         rpc_json = json.dumps(rpc) 
-        reply = requests.post(url = self.url, data=rpc_json, verify=False)
-        reply_msg_json = json.loads(reply.content)
-        base64_payload = reply_msg_json["payload"]
-        payload_bytes = base64.b64decode(base64_payload)
-        payload = json.loads(payload_bytes)
-       
+        try:
+            reply = requests.post(url = self.url, data=rpc_json, verify=False)
+            reply_msg_json = json.loads(reply.content)
+            base64_payload = reply_msg_json["payload"]
+            payload_bytes = base64.b64decode(base64_payload)
+            payload = json.loads(payload_bytes)
+        except requests.exceptions.ConnectionError as err:
+            raise ColoniesConnectionError(err)
+        except Exception as err:
+            raise ColoniesConnectionError(err)
+
         if reply.status_code == 200:
             return payload
         else:
-            raise Exception(payload["message"])
+            raise ColoniesError(payload["message"])
     
     def wait(self, process, timeout, prvkey):
         processid = process["processid"]
@@ -65,6 +76,7 @@ class Colonies:
         ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
         ws.send(json.dumps(rpcmsg))
         ws.recv()
+        ws.close()
 
         return self.get_process(process["processid"], prvkey)
 
@@ -85,13 +97,6 @@ class Colonies:
     def list_colonies(self, prvkey):
         msg = {
             "msgtype": "getcoloniesmsg",
-        }
-        return self.__rpc(msg, prvkey)
-    
-    def get_colony(self, colonyid, prvkey):
-        msg = {
-            "msgtype": "getcolonymsg",
-            "colonyid": colonyid
         }
         return self.__rpc(msg, prvkey)
     
@@ -217,5 +222,33 @@ class Colonies:
         msg = {
             "msgtype": "getattributemsg",
             "attributeid": attributeid
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def add_function(self, executorid, colonyid, funcname, args, desc, prvkey):
+        func = {}
+        func["executorid"] = executorid
+        func["colonyid"] = colonyid
+        func["funcname"] = funcname
+        func["args"] = args
+        func["desc"] = desc
+       
+        msg = {
+            "msgtype": "addfunctionmsg",
+            "fun": func
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_functions_by_executor(self, executorid, prvkey):
+        msg = {
+            "msgtype": "getfunctionsmsg",
+            "executorid": executorid
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_functions_by_colony(self, colonyid, prvkey):
+        msg = {
+            "msgtype": "getfunctionsmsg",
+            "colonyid": colonyid
         }
         return self.__rpc(msg, prvkey)

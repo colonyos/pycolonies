@@ -283,5 +283,36 @@ class TestColonies(unittest.TestCase):
 
         self.client.del_colony(colonyid, self.server_prv)
     
+    def test_add_function(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
+        self.client.approve_executor(executorid, colony_prvkey)
+    
+        self.client.add_function(executorid, colonyid, "funcname", ["arg1", "arg2"], "test desc", executor_prvkey)
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
+    def test_get_functions_by_colony(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
+        self.client.approve_executor(executorid, colony_prvkey)
+    
+        self.client.add_function(executorid, colonyid, "funcname", ["arg1", "arg2"], "test desc", executor_prvkey)
+        functions = self.client.get_functions_by_colony(colonyid, executor_prvkey)
+        self.assertTrue(len(functions)==1)
+        self.assertEqual(functions[0]["funcname"], "funcname")
+    
+    def test_get_functions_by_executor(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
+        self.client.approve_executor(executorid, colony_prvkey)
+    
+        self.client.add_function(executorid, colonyid, "funcname", ["arg1", "arg2"], "test desc", executor_prvkey)
+        functions = self.client.get_functions_by_executor(executorid, executor_prvkey)
+        self.assertTrue(len(functions)==1)
+        self.assertEqual(functions[0]["funcname"], "funcname")
+
+        self.client.del_colony(colonyid, self.server_prv)
+    
 if __name__ == '__main__':
     unittest.main()
