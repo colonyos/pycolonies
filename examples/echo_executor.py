@@ -8,7 +8,7 @@ import uuid
 
 class PythonExecutor:
     def __init__(self):
-        self.client = Colonies("localhost", 50080)
+        self.colonies = Colonies("localhost", 50080)
         crypto = Crypto()
         self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
         self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
@@ -26,14 +26,14 @@ class PythonExecutor:
         }
         
         try:
-            self.client.add_executor(executor, self.colony_prvkey)
-            self.client.approve_executor(self.executorid, self.colony_prvkey)
+            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.approve_executor(self.executorid, self.colony_prvkey)
         except Exception as err:
             print(err)
         print("Executor", self.executorid, "registered")
         
         try:
-            self.client.add_function(self.executorid, 
+            self.colonies.add_function(self.executorid, 
                                      self.colonyid, 
                                      "echo",  
                                      ["arg"], 
@@ -46,7 +46,7 @@ class PythonExecutor:
     def start(self):
         while (True):
             try:
-                process = self.client.assign(self.colonyid, 10, self.executor_prvkey)
+                process = self.colonies.assign(self.colonyid, 10, self.executor_prvkey)
                 print("Process", process["processid"], "is assigned to executor")
                 if process["spec"]["funcname"] == "echo":
                     arg = ""
@@ -55,13 +55,13 @@ class PythonExecutor:
                         arg = assigned_args[0]
 
                     # just set output to input value 
-                    self.client.close(process["processid"], [arg], self.executor_prvkey)
+                    self.colonies.close(process["processid"], [arg], self.executor_prvkey)
             except Exception as err:
                 print(err)
                 pass
 
     def unregister(self):
-        self.client.delete_executor(self.executorid, self.colony_prvkey)
+        self.colonies.delete_executor(self.executorid, self.colony_prvkey)
         print("Executor", self.executorid, "unregistered")
         os._exit(0)
 

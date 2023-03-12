@@ -5,6 +5,7 @@ sys.path.append(".")
 from crypto import Crypto
 import base64
 from websocket import create_connection
+import inspect
 
 class ColoniesConnectionError(Exception):
     pass
@@ -248,6 +249,13 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
+    def get_processgraph(self, processgraphid, prvkey):  # TODO: unittest
+        msg = {
+            "msgtype": "getprocessgraphmsg",
+            "processgraphid": processgraphid
+        }
+        return self.__rpc(msg, prvkey)
+    
     def add_function(self, executorid, colonyid, funcname, args, desc, prvkey):
         func = {}
         func["executorid"] = executorid
@@ -282,4 +290,68 @@ class Colonies:
             if process["spec"]["nodename"] == nodename:
                 return process
         return None
+    
+    def add_child(self, processgraphid, parentprocessid, childprocessid, funcspec, nodename, insert, prvkey):
+        funcspec["nodename"] = nodename
+        msg = {
+            "msgtype": "addchildmsg",
+            "processgraphid": processgraphid,
+            "parentprocessid": parentprocessid,
+            "childprocessid": childprocessid,
+            "insert": insert,
+            "spec": funcspec
+        }
+        return self.__rpc(msg, prvkey)
 
+    def create_func_spec(self, func, args, colonyid, executortype, priority, maxexectime, maxretries, maxwaittime, code=None):
+        if isinstance(func, str):
+            func_spec = {
+                "nodename": func,
+                "funcname": func, 
+                "args": args,
+                "priority": priority,
+                "maxwaittime": maxwaittime,
+                "maxexectime": maxexectime,
+                "maxretries": maxretries,
+                "conditions": {
+                    "colonyid": colonyid,
+                    "executortype": executortype
+                },
+                "label": ""
+            }
+            if code is not None:
+                code_bytes = code.encode("ascii")
+                code_base64_bytes = base64.b64encode(code_bytes)
+                code_base64 = code_base64_bytes.decode("ascii")
+                func_spec["env"] = {}
+                func_spec["env"]["code"] = code_base64
+
+        else:
+            code = inspect.getsource(func)
+            code_bytes = code.encode("ascii")
+            code_base64_bytes = base64.b64encode(code_bytes)
+            code_base64 = code_base64_bytes.decode("ascii")
+    
+            funcname = func.__name__
+            # args_spec = inspect.getfullargspec(func)
+            # args_spec_str = ','.join(args_spec.args)
+
+            func_spec = {
+                "nodename": funcname,
+                "funcname": funcname,
+                "args": args,
+                "priority": priority,
+                "maxwaittime": maxwaittime,
+                "maxexectime": maxexectime,
+                "maxretries": maxretries,
+                "conditions": {
+                    "colonyid": colonyid,
+                    "executortype": executortype
+                },
+                "env": {
+                    # "args_spec": args_spec_str,
+                    "code": code_base64,
+                },
+            }
+
+        return func_spec
