@@ -333,8 +333,6 @@ class Colonies:
             code_base64 = code_base64_bytes.decode("ascii")
     
             funcname = func.__name__
-            # args_spec = inspect.getfullargspec(func)
-            # args_spec_str = ','.join(args_spec.args)
 
             func_spec = {
                 "nodename": funcname,
@@ -349,7 +347,6 @@ class Colonies:
                     "executortype": executortype
                 },
                 "env": {
-                    # "args_spec": args_spec_str,
                     "code": code_base64,
                 },
             }
