@@ -37,7 +37,7 @@ class PythonExecutor:
                                      self.colonyid, 
                                      "echo",  
                                      ["arg"], 
-                                     "Python function that returns it input as outout", 
+                                     "Python function that returns it input as output", 
                                      self.executor_prvkey)
             
         except Exception as err:

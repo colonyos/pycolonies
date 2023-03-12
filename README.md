@@ -1,5 +1,5 @@
 # Introduction
-This repo contains a Python implementation of the [Colonies API](https://github.com/colonyos/colonies), making it possible to implement Colonies Executors and applications in Python.
+This repo contains a Python implementation of the [Colonies API](https://github.com/colonyos/colonies), making it possible to implement Colonies executors and applications in Python.
 
 The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path the cryptolib.so using an environmental variable.
 ```bash
@@ -21,8 +21,8 @@ INFO[0001] Successfully started Colonies development server
 INFO[0001] Press ctrl+c to exit
 ```
 
-### Submitting function specs
-To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called Executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smart phone. The Colonies server acts a mediator, matching function specification with suitable Executors.
+### Calling a function 
+To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smart phone. The Colonies server acts a mediator, matching function specification with suitable executors.
 
 ![Simplified architecture](docs/images/colonies_arch_simple.png)
 
@@ -121,10 +121,58 @@ func_spec = colonies.create_func_spec(func="echo",
 process = colonies.submit(func_spec, executor_prvkey)
 ```
 
-See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo.py) for a full example.
+See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo.py) for a full example. Type the command below to submit an another echo function spec. 
 
-### Implementing an Executor in Python
+```console
+python3 examples/echo.py
+```
+
+### Implementing an executor in Python
 An executor is responsible for executing one or several functions. It connects to the Colonies server to get process assignments. 
 
-The executor needs to be member of a colony in order to connect to the Colonies server and execute processes. A colony is like a project/namespace/tenant where one or several executors are members. Only the colony owner may add (register) executors to a colony and executors can only interact with other executors member of the same colony.
+The executor needs to be member of a colony in order to connect to the Colonies server and execute processes. A colony is like a project/namespace/tenant where one or several executors are members. Only the colony owner may add (register) executors to a colony and executors can only interact with other executors member of the same colony. More specifically, all messages sent to the Colonies server must be signed by the executor's private key. 
+
+Since we have access to the colony private key, we can implement an self-registering executor. 
+```python
+colonies = Colonies("localhost", 50080)
+crypto = Crypto()
+colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
+colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
+executor_prvkey = crypto.prvkey()
+executorid = crypto.id(self.executor_prvkey)
+
+executor = {
+    "executorname": "echo_executor",
+    "executorid": executorid,
+    "colonyid": colonyid,
+    "executortype": "echo_executor"
+}
+
+colonies.add_executor(executor, self.colony_prvkey)
+colonies.approve_executor(self.executorid, self.colony_prvkey)
+```
+
+We are also going register the *echo* function, telling the Colonies server that this executor is capable of executing a function called **echo**. One important reason to register the function is to prevent executing of arbitrary functions. This is going to be extra important when using code injection in the next section.
+
+```python
+colonies.add_function(executorid, 
+                      colonyid, 
+                      "echo",  
+                      ["arg"], 
+                      "Python function that returns it input as output", 
+                      self.executor_prvkey)
+```
+
+The next step is to connect the Colonies server to get process assignments. Note that the Colonies server never establish connections to the executors, but rather executors connects to the Colonies server. In this way, executors may run behind firewalls without problems. The *assign* function below will block for 10 seconds if there are no suitable process assignments.
+
+```python
+process = colonies.assign(self.colonyid, 10, self.executor_prvkey)
+if process["spec"]["funcname"] == "echo":
+    assigned_args = process["spec"]["args"]
+    self.colonies.close(process["processid"], [arg], self.executor_prvkey)
+```
+
+The *close* method sets the output (same the args in this case) and the process state to "successful". Only the executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long time an executor may run a process before is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
+
+
 
