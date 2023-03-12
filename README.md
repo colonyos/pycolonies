@@ -139,7 +139,7 @@ crypto = Crypto()
 colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
 colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
 executor_prvkey = crypto.prvkey()
-executorid = crypto.id(self.executor_prvkey)
+executorid = crypto.id(executor_prvkey)
 
 executor = {
     "executorname": "echo_executor",
@@ -148,8 +148,8 @@ executor = {
     "executortype": "echo_executor"
 }
 
-colonies.add_executor(executor, self.colony_prvkey)
-colonies.approve_executor(self.executorid, self.colony_prvkey)
+colonies.add_executor(executor, colony_prvkey)
+colonies.approve_executor(executorid, colony_prvkey)
 ```
 
 We are also going register the *echo* function, telling the Colonies server that this executor is capable of executing a function called *echo*. One important reason to register the function is to prevent executing of arbitrary functions. This is going to be extra important when using code injection in the next section.
@@ -160,16 +160,16 @@ colonies.add_function(executorid,
                       "echo",  
                       ["arg"], 
                       "Python function that returns it input as output", 
-                      self.executor_prvkey)
+                      executor_prvkey)
 ```
 
 The next step is to connect the Colonies server to get process assignments. Note that the Colonies server never establish connections to the executors, but rather executors connects to the Colonies server. In this way, executors may run behind firewalls without problems. The *assign* function below will block for 10 seconds if there are no suitable process assignments.
 
 ```python
-process = colonies.assign(self.colonyid, 10, self.executor_prvkey)
+process = colonies.assign(colonyid, 10, executor_prvkey)
 if process["spec"]["funcname"] == "echo":
     assigned_args = process["spec"]["args"]
-    self.colonies.close(process["processid"], [arg], self.executor_prvkey)
+    colonies.close(process["processid"], [arg], executor_prvkey)
 ```
 
 The *close* method sets the output (same the args in this case) and the process state to "successful". Only the executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long time an executor may run a process before is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
@@ -246,6 +246,8 @@ submitted_process = colonies.submit(func_spec, executor_prvkey)
 completed_process = colonies.wait(submitted_process, 100, executor_prvkey)
 ```
 
+The *wait()* function blocks until the submitted process is completed, either successful or failed.
+
 See [func_spec_example1.py](https://github.com/colonyos/pycolonies/blob/main/examples/func_spec_example1.py) and [python_executor.py](https://github.com/colonyos/pycolonies/blob/main/examples/python_executor.py) for a full example. Type the commands below to try it out. 
 
 ```console
@@ -282,7 +284,97 @@ Function:
 +-------------+-----------------+
 ```
 
-# Workflows and DAGs
+# Workflows
+Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several function, i.e. control which order functions are called and pass values between function calls. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, *creating compute continuums*. 
+
+The examples below calculates *sum_nums(gen_nums())*. The *gen_nums()* function simply return a tuple containing 1 and 2. The *sum_nums()* function takes two arguments and calculates the sum of them.
+
+```python
+def gen_nums(ctx={}):
+    return 1, 2 
+
+def sum_nums(n1, n2, ctx={}):
+    return n1 + n2 
+
+wf = Workflow(colonyid)
+func_spec = colonies.create_func_spec(func=gen_nums, 
+                                      args=[], 
+                                      colonyid=colonyid, 
+                                      executortype="python_executor")
+wf.add(func_spec, nodename="gen_nums", dependencies=[])
+
+func_spec = colonies.create_func_spec(func=sum_nums, 
+                                      args=[], 
+                                      colonyid=colonyid, 
+                                      executortype="python_executor")
+wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
+
+processgraph = colonies.submit(wf, executor_prvkey)
+```
+
+### Dynamic process graphs
+ It also possible to dynamically modify a processgraph while it is still active, e.g. a function may submit more functions to a workflow while executing. This makes it possible to implement patterns like [map-reduce](https://en.wikipedia.org/wiki/MapReduce).
+
+The *map()* function below dynamically adds 5 *gen_nums()* functions to the processgraph.
+
+```python
+def map(ctx={}):
+    code = """def gen_nums(ctx={}):
+                return 1, 2""" 
+  
+    processgraphid = ctx["process"]["processgraphid"]
+    map_processid = ctx["process"]["processid"]
+    executor_prvkey = ctx["executor_prvkey"]
+  
+    processgraph = colonies.get_processgraph(processgraphid, executor_prvkey)
+    print(processgraph)
+    reduce_process = colonies.find_process("reduce", processgraph["processids"], executor_prvkey)
+    reduce_processid = reduce_process["processid"]
+
+    insert = True
+    for i in range(5):
+        func_spec = colonies.create_func_spec(func="gen_nums", 
+                                              args=[], 
+                                              colonyid=ctx["colonyid"], 
+                                              executortype="python_executor",
+                                              priority=200,
+                                              maxexectime=100,
+                                              maxretries=3,
+                                              maxwaittime=100,
+                                              code=code)
 
 
+        colonies.add_child(processgraphid, map_processid, reduce_processid, func_spec, "gen_nums_" + str(i), insert, executor_prvkey)
+        insert = False
+```
 
+The *reduce()* function takes arbitrary integer arguments returns the sum of them. 
+
+```python
+def reduce(*nums, ctx={}):
+    total = 0
+    for n in nums:
+        total += n
+    return total 
+```
+
+We can now create a workflow to calulate: *reduce(gen_nums(), gen_nums(), gen_nums(), gen_nums(), gen_nums())*. The result should be (1+2)*5=15.
+
+```python
+wf = Workflow(colonyid)
+func_spec = colonies.create_func_spec(func=map, 
+                                      args=[], 
+                                      colonyid=colonyid, 
+                                      executortype="python_executor")
+wf.add(func_spec, nodename="map", dependencies=[])
+
+func_spec = colonies.create_func_spec(func=reduce, 
+                                      args=[], 
+                                      colonyid=colonyid, 
+                                      executortype="python_executor")
+wf.add(func_spec, nodename="reduce", dependencies=["map"])
+
+processgraph = colonies.submit(wf, executor_prvkey)
+```
+
+![MapReduce example](docs/images/mapreduce.png)
