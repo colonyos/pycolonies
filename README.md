@@ -396,4 +396,4 @@ m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
 print(m.do(gen_nums).do(reduce).unwrap())
 ```
 
-See [monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example. Type the commands below to try it out. 
+See [monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example.
