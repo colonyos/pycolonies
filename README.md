@@ -24,7 +24,7 @@ INFO[0001] Press ctrl+c to exit
 ### Submitting function specs
 To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called Executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smart phone. The Colonies server acts a mediator, matching function specification with suitable Executors.
 
-![Simplified architecture](colonies_arch_simple.png)
+![Simplified architecture](docs/images/colonies_arch_simple.png)
 
 After a function specification has been submitted, a process is created on the Colonies server. A process in this case is not a operating system process or anything like that, but rather a database entry containing instructions how to execute the function. It also contains contextual information such as execution status, priority, submission time, and environmental variables, input and output values etc.
 
