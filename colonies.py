@@ -12,6 +12,22 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
 
+class Workflow:
+    def __init__(self, colonyid):
+        self.colonyid = colonyid
+        self.func_specs = []
+
+    def add(self, func_spec, nodename, dependencies):
+        func_spec["nodename"] = nodename
+        func_spec["conditions"]["dependencies"] = dependencies
+        self.func_specs.append(func_spec)
+
+    def workflow_spec(self):
+        return { 
+                "colonyid" : self.colonyid,
+                "functionspecs" : self.func_specs
+                }
+
 class Colonies:
     WAITING = 0
     RUNNING = 1
@@ -142,12 +158,19 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def submit(self, func_spec, prvkey):
-        msg = {
-            "msgtype": "submitfuncspecmsg",
-            "spec": func_spec
-        }
-        return self.__rpc(msg, prvkey)
+    def submit(self, spec, prvkey):
+        if isinstance(spec, Workflow):
+            msg = {
+                "msgtype": "submitworkflowspecmsg",
+                "spec": spec.workflow_spec()
+            }
+            return self.__rpc(msg, prvkey)
+        else:
+            msg = {
+                "msgtype": "submitfuncspecmsg",
+                "spec": spec
+            }
+            return self.__rpc(msg, prvkey)
     
     def assign(self, colonyid, timeout, prvkey):
         msg = {
@@ -252,3 +275,11 @@ class Colonies:
             "colonyid": colonyid
         }
         return self.__rpc(msg, prvkey)
+   
+    def find_process(self, nodename, processids, prvkey):
+        for processid in processids:
+            process = self.get_process(processid, prvkey)
+            if process["spec"]["nodename"] == nodename:
+                return process
+        return None
+

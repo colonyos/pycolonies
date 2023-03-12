@@ -7,7 +7,7 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
     if isinstance(func, str):
         func_spec = {
             "nodename": func,
-            "funcname": func,
+            "funcname": func, 
             "args": args,
             "priority": priority,
             "maxwaittime": maxwaittime,
@@ -15,7 +15,7 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
             "maxretries": maxretries,
             "conditions": {
                 "colonyid": colonyid,
-                "executortype": executortype,
+                "executortype": executortype
             },
             "label": ""
         }
@@ -39,7 +39,7 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
             "maxretries": maxretries,
             "conditions": {
                 "colonyid": colonyid,
-                "executortype": executortype,
+                "executortype": executortype
             },
             "env": {
                 "args_spec": args_spec_str,
@@ -48,3 +48,17 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
         }
 
     return func_spec
+
+def formatargs(args):
+    s = ""
+    for a in args:
+        s+=str(a)+', '
+               
+    s = s.replace('[', '')
+    s = s.replace(']', '')
+    s = s.strip()
+    
+    if len(s)>0 and s[len(s)-1] == ",":
+        s = s[:len(s)-1]
+    
+    return s

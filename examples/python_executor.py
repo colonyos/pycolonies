@@ -8,20 +8,6 @@ import base64
 import os
 import uuid
 
-def formatargs(args):
-    s = ""
-    for a in args:
-        s+=str(a)+', '
-               
-    s = s.replace('[', '')
-    s = s.replace(']', '')
-    s = s.strip()
-    
-    if len(s)>0 and s[len(s)-1] == ",":
-        s = s[:len(s)-1]
-    
-    return s
-
 class PythonExecutor:
     def __init__(self):
         self.client = Colonies("localhost", 50080)
@@ -38,7 +24,7 @@ class PythonExecutor:
             "executorname": str(uuid.uuid4()),
             "executorid": self.executorid,
             "colonyid": self.colonyid,
-            "executortype": "faas_executor"
+            "executortype": "python_executor"
         }
         
         try:
@@ -48,6 +34,30 @@ class PythonExecutor:
             print(err)
             sys.exit(-1)
         print("Executor", self.executorid, "registered")
+                
+        try:
+            self.client.add_function(self.executorid, 
+                                     self.colonyid, 
+                                     "gen_nums",  
+                                     [], 
+                                     "Python function", 
+                                     self.executor_prvkey)
+            
+            self.client.add_function(self.executorid, 
+                                     self.colonyid, 
+                                     "sum_nums",  
+                                     ["n1","n2"], 
+                                     "Python function", 
+                                     self.executor_prvkey)
+            
+            self.client.add_function(self.executorid, 
+                                     self.colonyid, 
+                                     "reduce",  
+                                     ["*nums"], 
+                                     "Python function", 
+                                     self.executor_prvkey)
+        except Exception as err:
+            print(err)
    
     def start(self):
         while (True):
@@ -58,7 +68,6 @@ class PythonExecutor:
                 print()
                 print("Process", assigned_process["processid"], "is assigned to Executor")
 
-
                 # ok, executor was assigned a process, extract the function code to run
                 code_base64 = assigned_process["spec"]["env"]["code"]
                 code_bytes2 = base64.b64decode(code_base64)
@@ -67,34 +76,27 @@ class PythonExecutor:
                 # add the function to the global scope
                 exec(code)
 
-                # register the function to the colonies server
-                print(assigned_process["spec"]["env"]["args_spec"])
-
-
-
-                try:
-                    self.client.add_function(self.executorid, 
-                                             self.colonyid, 
-                                             assigned_process["spec"]["funcname"],  
-                                             assigned_process["spec"]["env"]["args_spec"].split(","), 
-                                             "Python function", 
-                                             self.executor_prvkey)
-                except Exception as err:
-                    # ignore, the function is already registered
-                    pass
-
                 # extract args and call the function code we just injected
                 funcspec = assigned_process["spec"]
                 funcname = funcspec["funcname"]
-                args = funcspec["args"]
-                formated_args = formatargs(args)
-                print("Executing:", funcspec["funcname"] + "(" + formatargs(funcspec["args"]) + ")")
+
+                # if in is defined, it is the output of the parent process,
+                # use the output from parent process instead of args
+                if len(assigned_process["in"])>0:
+                    args = []
+                    for args_from_parent in assigned_process["in"]:
+                        for a in args_from_parent:
+                            args.append(a)
+                else:
+                    args = funcspec["args"]
+
+                print("Executing:", funcspec["funcname"])
 
                 # call the injected function
                 try:
-                    res = eval(funcname+'(' + formated_args + ')')
-                except:
-                    print("Failed to execute function:")
+                    res = eval(funcname)(*tuple(args))
+                except Exception as err:
+                    print("Failed to execute function:", err)
                     print(code)
                     self.client.fail(assigned_process["processid"], ["Failed to execute function"], self.executor_prvkey)
                     continue
