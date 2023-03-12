@@ -31,6 +31,17 @@ class PythonExecutor:
         except Exception as err:
             print(err)
         print("Executor", self.executorid, "registered")
+        
+        try:
+            self.client.add_function(self.executorid, 
+                                     self.colonyid, 
+                                     "echo",  
+                                     ["arg"], 
+                                     "Python function that returns it input as outout", 
+                                     self.executor_prvkey)
+            
+        except Exception as err:
+            print(err)
    
     def start(self):
         while (True):

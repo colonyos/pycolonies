@@ -17,6 +17,7 @@ class PythonExecutor:
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
 
+        colonies_client = self.client
         self.register()
         
     def register(self):
@@ -36,6 +37,12 @@ class PythonExecutor:
         print("Executor", self.executorid, "registered")
                 
         try:
+            self.client.add_function(self.executorid, 
+                                     self.colonyid, 
+                                     "map",  
+                                     [], 
+                                     "Python function", 
+                                     self.executor_prvkey)
             self.client.add_function(self.executorid, 
                                      self.colonyid, 
                                      "gen_nums",  

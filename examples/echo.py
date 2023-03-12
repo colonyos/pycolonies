@@ -2,7 +2,6 @@ import sys
 sys.path.append(".")
 from colonies import Colonies
 from utils import create_func_spec
-from faas_executor import formatargs 
 
 client = Colonies("localhost", 50080)
 
@@ -23,8 +22,7 @@ func_spec = create_func_spec(func="echo",
                              maxretries=3,
                              maxwaittime=100)
 
-#for x in range(1000000000):
 process = client.submit(func_spec, executor_prvkey)
 print("Process", process["processid"], "submitted")
 process = client.wait(process, 100, executor_prvkey)
-print("Result:", func_spec["funcname"] + "(" + formatargs(func_spec["args"]) + ") -> " + process["out"][0])
+print(process["out"][0])
