@@ -312,7 +312,7 @@ wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
 processgraph = colonies.submit(wf, executor_prvkey)
 ```
 
-### Dynamic process graphs
+## Dynamic processgraphs
  It also possible to dynamically modify a processgraph while it is still active, e.g. a function may submit more functions to a workflow while executing. This makes it possible to implement patterns like [map-reduce](https://en.wikipedia.org/wiki/MapReduce).
 
 The *map()* function below dynamically adds 5 *gen_nums()* functions to the processgraph.
@@ -378,3 +378,21 @@ processgraph = colonies.submit(wf, executor_prvkey)
 ```
 
 ![MapReduce example](docs/images/mapreduce.png)
+
+# Monadic workflows
+The workflow code can be significantly simplified by expressing it as a monad.
+
+```python
+def gen_nums(ctx={}):
+    return 1, 2 
+
+def reduce(*nums, ctx={}):
+    total = 0
+    for n in nums:
+        total += n
+    return total 
+
+m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
+print(m.do(gen_nums).do(reduce).unwrap())
+```
+
