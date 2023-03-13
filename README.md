@@ -21,7 +21,7 @@ def process_data(*data):
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
-m >> gen_data >> process_data).unwrap())
+(m >> gen_data >> process_data).unwrap()
 ```
 , where the `gen_data` function is automatically serialized, deployed and executed on an IoT device, and the `process_data` function is deployed and executed on an edge server?
 
