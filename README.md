@@ -14,7 +14,7 @@ We may also want a framework that hides away all the complexity of a distributed
 def gen_data():
     return 1, 2
 
-def process_data(*nums, ctx={}):
+def process_data(*nums):
     total = 0
     for n in nums:
         total += n
@@ -425,4 +425,4 @@ result = (m >> gen_data >> process_data).unwrap()
 print(result)  # prints 3 
 ```
 
-See [monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example.
+See [colonies_monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example.
