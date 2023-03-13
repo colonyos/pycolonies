@@ -16,8 +16,8 @@ def gen_data():
 
 def process_data(*data):
     total = 0
-    for n in nums:
-        total += n
+    for d in data:
+        total += d
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
