@@ -18,4 +18,4 @@ def reduce(*nums, ctx={}):
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
-print(m.do(gen_nums).do(reduce).unwrap())
+print((m >> gen_nums >> reduce).unwrap())  # returns 1 + 2 = 3

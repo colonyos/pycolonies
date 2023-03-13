@@ -11,7 +11,7 @@ class ColoniesMonad:
         self.prev_func = None
         self.colonies = Colonies(host, port)
 
-    def do(self, func):
+    def __rshift__(self, func):  # bind function
         func_spec = self.colonies.create_func_spec(func=func, 
                                                    args=[], 
                                                    colonyid=self.colonyid, 

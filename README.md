@@ -1,7 +1,7 @@
 # Introduction
 This repo contains a Python implementation of the [Colonies API](https://github.com/colonyos/colonies), making it possible to implement Colonies executors and applications in Python.
 
-The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path the cryptolib.so using an environmental variable.
+The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path to the cryptolib.so using an environmental variable.
 ```bash
 export CRYPTOLIB=".../colonies/lib/cryptolib.so"
 ```
@@ -22,11 +22,11 @@ INFO[0001] Press ctrl+c to exit
 ```
 
 ## Calling a function 
-To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smart phone. The Colonies server acts a mediator, matching function specification with suitable executors.
+To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smartphone. The Colonies server acts as a mediator, matching function specification with suitable executors.
 
 ![Simplified architecture](docs/images/colonies_arch_simple.png)
 
-After a function specification has been submitted, a process is created on the Colonies server. A process in this case is not a operating system process or anything like that, but rather a database entry containing instructions how to execute the function. It also contains contextual information such as execution status, priority, submission time, and environmental variables, input and output values etc. An executor then uses the Colonies HTTP API to manipulate process information, e.g. closing the process after executing the specified function.
+After a function specification has been submitted, a process is created on the Colonies server. A process in this case is not an operating system process or anything like that, but rather a database entry containing instructions how to execute the function. It also contains contextual information such as execution status, priority, submission time, and environmental variables, input and output values etc. An executor then uses the Colonies HTTP API to manipulate process information, e.g. closing the process after executing the specified function.
 
 Below is an example of function specification.
 ```json
@@ -41,7 +41,7 @@ Below is an example of function specification.
 }
 ```
 
-The function specification also contains requirements (conditions) that needs to be fulfilled for the function to be executed. In this case, only executors of the "echo-executor" type may execute the function.
+The function specification also contains requirements (conditions) that need to be fulfilled for the function to be executed. In this case, only executors of the "echo-executor" type may execute the function.
 
 A function specification can be submitted using the Colonies CLI.
 ```console
@@ -50,7 +50,7 @@ colonies function submit --spec echo_func_spec.json
 INFO[0000] Process submitted                             ProcessID=ea398af346db85f45b118bb77ecda9ae25f4700dcafcccb4ba3e4d40eba5205a
 ```
 
-We can also look up the process using the CLI,
+We can also look up the process using the CLI.
 ```console
 colonies process get -p ea398af346db85f45b118bb77ecda9ae25f4700dcafcccb4ba3e4d40eba5205a 
 
@@ -95,7 +95,7 @@ Attributes:
 No attributes found
 ```
 
-The command below shows all waiting processes. The process will just be enqueued since we don't yet have an executor of the type "echo_executor". 
+The command below shows all waiting processes. The process will just be enqueued since we don't yet have an executor of the type *echo_executor*. 
 ```console
 colonies process psw
 INFO[0000] Starting a Colonies client                    Insecure=true ServerHost=localhost ServerPort=50080
@@ -121,7 +121,7 @@ func_spec = colonies.create_func_spec(func="echo",
 process = colonies.submit(func_spec, executor_prvkey)
 ```
 
-See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo.py) for a full example. Type the command below to submit an another echo function spec. 
+See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo.py) for a full example. Type the command below to submits an another echo function spec. 
 
 ```console
 python3 examples/echo.py
@@ -130,9 +130,9 @@ python3 examples/echo.py
 ## Implementing an executor in Python
 An executor is responsible for executing one or several functions. It connects to the Colonies server to get process assignments. 
 
-The executor needs to be member of a colony in order to connect to the Colonies server and execute processes. A colony is like a project/namespace/tenant where one or several executors are members. Only the colony owner may add (register) executors to a colony and executors can only interact with other executors member of the same colony. More specifically, all messages sent to the Colonies server must be signed by the executor's private key. 
+The executor needs to be a member of a colony in order to connect to the Colonies server and execute processes. A colony is like a project/namespace/tenant where one or several executors are members. Only the colony owner may add (register) executors to a colony and executors can only interact with other executor members of the same colony. More specifically, all messages sent to the Colonies server must be signed by the executor's private key. 
 
-Since we have access to the colony private key, we can implement an self-registering executor. 
+Since we have access to the colony private key, we can implement a self-registering executor. 
 ```python
 colonies = Colonies("localhost", 50080)
 crypto = Crypto()
@@ -152,7 +152,7 @@ colonies.add_executor(executor, colony_prvkey)
 colonies.approve_executor(executorid, colony_prvkey)
 ```
 
-We are also going register the *echo* function, telling the Colonies server that this executor is capable of executing a function called *echo*. One important reason to register the function is to prevent executing of arbitrary functions. This is going to be extra important when using code injection in the next section.
+We are also going to register the *echo* function, telling the Colonies server that this executor is capable of executing a function called *echo*. One important reason to register the function is to prevent execution arbitrary functions (e.g. rm -rf *). This is going to be extra important when using code injection in the next section.
 
 ```python
 colonies.add_function(executorid, 
@@ -172,7 +172,7 @@ if process["spec"]["funcname"] == "echo":
     colonies.close(process["processid"], [arg], executor_prvkey)
 ```
 
-The *close* method sets the output (same the args in this case) and the process state to "successful". Only the executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long time an executor may run a process before is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
+The *close* method sets the output (same the args in this case) and the process state to *successful*. Only the executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long an executor may run a process before it is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
 
 See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo_executor.py) for a full example. Type the command below to start the *echo executor*. 
 
@@ -183,7 +183,7 @@ python3 examples/echo_executor.py
 # Code-injection
 Python has a built-in *eval()* function that allows execution of any piece of Python code encoded as strings. We are going to use the *eval()* function to implement an executor that can execute arbitrary Python functions.
    
-Python also has support introspection, which allows Python code to examine itsef. We are going to use that to get the source code of function definitions, e.g. the echo function.
+Python also has support introspection, which allows Python code to examine itself. We are going to use that to get the source code of function definitions, e.g. the echo function.
 ```python
 def echo(arg)
     return arg
@@ -227,7 +227,7 @@ res = eval(funcname)(*tuple(args))
 colonies.close(assigned_process["processid"], [res], executor_prvkey)
 ```
 
-We can now can create a distributed Python application where parts of the code runs on a remote executor.
+We can now create a distributed Python application where parts of the code runs on a remote executor.
 
 ```python
 def sum_nums(n1, n2, ctx={}):
@@ -285,9 +285,9 @@ Function:
 ```
 
 # Workflows
-Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several function, i.e. control which order functions are called and pass values between function calls. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, *creating compute continuums*. 
+Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several functions, i.e. control the order which functions are called and pass values between function calls. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, **creating compute continuums**. 
 
-The examples below calculates *sum_nums(gen_nums())*. The *gen_nums()* function simply return a tuple containing 1 and 2. The *sum_nums()* function takes two arguments and calculates the sum of them.
+The example below calculates *sum_nums(gen_nums())*. The *gen_nums()* function simply return a tuple containing 1 and 2. The *sum_nums()* function takes two arguments and calculates the sum of them.
 
 ```python
 def gen_nums(ctx={}):
@@ -348,7 +348,7 @@ def map(ctx={}):
         insert = False
 ```
 
-The *reduce()* function takes arbitrary integer arguments returns the sum of them. 
+The *reduce()* function takes arbitrary integer arguments and returns the sum of them. 
 
 ```python
 def reduce(*nums, ctx={}):
@@ -380,7 +380,7 @@ processgraph = colonies.submit(wf, executor_prvkey)
 ![MapReduce example](docs/images/mapreduce.png)
 
 # Monadic workflows
-The workflow code can be significantly simplified by expressing it as a monad.
+The workflow code can be significantly simplified by expressing it as a monad. A good introduction to monads can be found [here](https://brian-candler.medium.com/function-composition-with-bind-4f6e3fdc0e7). The example below is not a complete monad, but just illustrated how the Colonies *plumbing* can be removed and create elegant functional expressions.  
 
 ```python
 def gen_nums(ctx={}):
@@ -393,7 +393,7 @@ def reduce(*nums, ctx={}):
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
-print(m.do(gen_nums).do(reduce).unwrap())
+print((m >> gen_nums >> reduce).unwrap())  # returns 1 + 2 = 3
 ```
 
 See [monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example.
