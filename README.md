@@ -21,7 +21,9 @@ def process_data(*data):
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
-(m >> gen_data >> process_data).unwrap()
+result = (m >> gen_data >> process_data).unwrap()
+print(result)  # prints 3
+
 ```
 , where the `gen_data` function is automatically serialized, deployed and executed on an IoT device, and the `process_data` function is deployed and executed on an edge server?
 
@@ -409,17 +411,18 @@ processgraph = colonies.submit(wf, executor_prvkey)
 The workflow code can be significantly simplified by expressing it as a monad. A good introduction to monads can be found [here](https://brian-candler.medium.com/function-composition-with-bind-4f6e3fdc0e7). The example below is not a complete monad, but just illustrated how the Colonies *plumbing* can be removed and create elegant functional expressions.  
 
 ```python
-def gen_nums(ctx={}):
+def gen_data(ctx={}):
     return 1, 2 
 
-def reduce(*nums, ctx={}):
+def process_data(*nums, ctx={}):
     total = 0
     for n in nums:
         total += n
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
-print((m >> gen_nums >> reduce).unwrap())  # returns 1 + 2 = 3
+result = (m >> gen_data >> process_data).unwrap()
+print(result)  # prints 3 
 ```
 
 See [monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example.
