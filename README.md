@@ -5,8 +5,8 @@ In the tutorial below, we are going to implement a Python application where part
 
 1. We want to reduce resource consumption on the client, e.g. CPU intensive code can run on a remote server.
 2. We want to scale the applications by using many computers, e.g. using MapReduce patterns or create so-called worker queues for batch processing.
-3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, some parts in the cloud, creating so-called **compute continuums, where the code can still be expressed as a single uniform code in one place.
-4. We want to create robust applications, e.g. we want to guarantee that a function is called even if some computers fails.
+3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, some parts in the cloud, creating so-called **compute continuums**, where the code can still be expressed as a single uniform code in one place.
+4. We want to create robust applications, e.g. we want to guarantee that a function is called even if some computers fail.
 
 We may also want a framework that hides away all the complexity of a distributed system. What about if you could write the following applications
 
@@ -48,7 +48,7 @@ INFO[0001] Press ctrl+c to exit
 ```
 
 ## Calling a function 
-To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smartphone. The Colonies server acts as a mediator, matching function specification with suitable executors.
+To execute a function, a function specification must be submitted to the Colonies server. The function is then executed by a so-called executor that may reside anywhere on the Internet, for example in a Kubernetes Pod, an IoT device, a virtual machine on an edge server, or a smartphone. The Colonies server acts as a mediator, matching function specifications with suitable executors.
 
 ![Simplified architecture](docs/images/colonies_arch_simple.png)
 
@@ -185,7 +185,7 @@ colonies.add_function(executorid,
                       colonyid, 
                       "echo",  
                       ["arg"], 
-                      "Python function that returns it input as output", 
+                      "Python function that returns its input as output", 
                       executor_prvkey)
 ```
 
@@ -209,7 +209,7 @@ python3 examples/echo_executor.py
 # Code-injection
 Python has a built-in `eval()` function that allows execution of any piece of Python code encoded as strings. We are going to use the `eval()` function to implement an executor that can execute arbitrary Python functions.
    
-Python also has support introspection, which allows Python code to examine itself. We are going to use that to get the source code of function definitions, e.g. the `echo` function.
+Python also has support for introspection, which allows Python code to examine itself. We are going to use that to get the source code of function definitions, e.g. the `echo` function.
 ```python
 def echo(arg)
     return arg
@@ -311,7 +311,7 @@ Function:
 ```
 
 # Workflows
-Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several functions, i.e. control the order which functions are called and pass values between function calls. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, **creating compute continuums**. 
+Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several functions, i.e. control the order which functions are called and pass values between function calls, even if they run on different executors. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, **creating compute continuums**. 
 
 The example below calculates `sum_nums(gen_nums())`. The `gen_nums()` function simply return a tuple containing 1 and 2. The `sum_nums()*` function takes two arguments and calculates the sum of them.
 
@@ -339,7 +339,7 @@ processgraph = colonies.submit(wf, executor_prvkey)
 ```
 
 ## Dynamic processgraphs
- It also possible to dynamically modify a processgraph while it is still active, e.g. a function may submit more functions to a workflow while executing. This makes it possible to implement patterns like [MapReduce](https://en.wikipedia.org/wiki/MapReduce).
+ It also possible to dynamically modify a processgraph while it is still active, e.g. a function may submit more function specifications to a workflow while executing. This makes it possible to implement patterns like [MapReduce](https://en.wikipedia.org/wiki/MapReduce).
 
 The `map()` function below dynamically adds 5 `gen_nums()` functions to the processgraph.
 
