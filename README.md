@@ -3,7 +3,7 @@ This repo contains a Python implementation of the [Colonies API](https://github.
 
 In the tutorial below, we are going to implement a Python application where parts of the code is *offloaded* and executed on a remote server, a so-called **executor**. There are a couple of reasons why we want to do this.
 
-1. We want to reduce resource consumption on client, e.g. move CPU intensive code to a remote server.
+1. We want to reduce resource consumption on a client, e.g. move CPU intensive code to a remote server.
 2. We want to scale the applications by using many computers, e.g. using MapReduce patterns or worker queues for batch processing.
 3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, some parts in the cloud, creating so-called **compute continuums**, where the code can still be expressed as a single uniform code in one place.
 4. We want to create robust distributed applications, e.g. we want to guarantee that a function is called even if some computers (executors) fail.
