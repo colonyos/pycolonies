@@ -1,12 +1,12 @@
 # Introduction
 This repo contains a Python implementation of the [Colonies API](https://github.com/colonyos/colonies), making it possible to implement Colonies executors and applications in Python. 
 
-In the tutorial below, we are going to implement a Python application where parts of the code is *offloaded* and executed on a remote server, a so-called executor. There are a couple of reasons why we want to do this.
+In the tutorial below, we are going to implement a Python application where parts of the code is *offloaded* and executed on a remote server, a so-called **executor**. There are a couple of reasons why we want to do this.
 
-1. We want to reduce resource consumption on the client, e.g. CPU intensive code can run on a remote server.
-2. We want to scale the applications by using many computers, e.g. using MapReduce patterns or create so-called worker queues for batch processing.
+1. We want to reduce resource consumption on client, e.g. move CPU intensive code to a remote server.
+2. We want to scale the applications by using many computers, e.g. using MapReduce patterns or worker queues for batch processing.
 3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, some parts in the cloud, creating so-called **compute continuums**, where the code can still be expressed as a single uniform code in one place.
-4. We want to create robust applications, e.g. we want to guarantee that a function is called even if some computers fail.
+4. We want to create robust distributed applications, e.g. we want to guarantee that a function is called even if some computers (executors) fail.
 
 We may also want a framework that hides away all the complexity of a distributed system. What about if you could write the following applications
 
@@ -23,7 +23,7 @@ def process_data(*data):
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
 m >> gen_data >> process_data).unwrap())
 ```
-, where the `gen_data` function is automatically deployed and executed on an IoT device, and the `process_data` function is deployed and executed on an edge server?
+, where the `gen_data` function is automatically serialized, deployed and executed on an IoT device, and the `process_data` function is deployed and executed on an edge server?
 
 In this tutorial we are going to explore this possibility. 
 
@@ -52,7 +52,7 @@ To execute a function, a function specification must be submitted to the Colonie
 
 ![Simplified architecture](docs/images/colonies_arch_simple.png)
 
-After a function specification has been submitted, a process is created on the Colonies server. A process in this case is not an operating system process or anything like that, but rather a database entry containing instructions how to execute the function. It also contains contextual information such as execution status, priority, submission time, and environmental variables, input and output values etc. An executor then uses the Colonies HTTP API to manipulate process information, e.g. closing the process after executing the specified function.
+After a function specification has been submitted, a process is created on the Colonies server. A process in this case is not an operating system process or anything like that, but rather a database entry containing instructions how to execute the function. It also contains contextual information such as execution status, priority, submission time, and environmental variables, input and output values etc. An executor then uses the Colonies HTTP API to manipulate process information, e.g. reading input arguments, setting output, and closing the process after executing the specified function.
 
 Below is an example of function specification.
 ```json
@@ -67,7 +67,7 @@ Below is an example of function specification.
 }
 ```
 
-The function specification also contains requirements (conditions) that need to be fulfilled for the function to be executed. In this case, only executors of the "echo-executor" type may execute the function.
+The function specification also contains requirements (conditions) that need to be fulfilled for the function to be executed. In this case, only executors of the "echo-executor" type may execute the function. In the future, one could envision other kinds of conditions, e.g. requirements on cloud costs or green energy demand.
 
 A function specification can be submitted using the Colonies CLI.
 ```console
@@ -154,11 +154,11 @@ python3 examples/echo.py
 ```
 
 ## Implementing an executor in Python
-An executor is responsible for executing one or several functions. It connects to the Colonies server to get process assignments. 
+As mentioned before, an executor is responsible for executing one or several functions. It connects to the Colonies server to get process assignments. 
 
 The executor needs to be a member of a colony in order to connect to the Colonies server and execute processes. A colony is like a project/namespace/tenant where one or several executors are members. Only the colony owner may add (register) executors to a colony and executors can only interact with other executor members of the same colony. More specifically, all messages sent to the Colonies server must be signed by the executor's private key. 
 
-Since we have access to the colony private key, we can implement a self-registering executor. 
+Since we have access to the colony private key (see devenv file), we can implement a self-registering executor. 
 ```python
 colonies = Colonies("localhost", 50080)
 crypto = Crypto()
