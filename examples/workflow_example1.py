@@ -1,6 +1,7 @@
 import sys
 sys.path.append(".")
 from colonies import Colonies
+from colonies import create_func_spec
 from colonies import Workflow
 
 colonies = Colonies("localhost", 50080)
@@ -16,24 +17,24 @@ def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
 wf = Workflow(colonyid)
-func_spec = colonies.create_func_spec(func=gen_nums, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100)
+func_spec = create_func_spec(func=gen_nums, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 wf.add(func_spec, nodename="gen_nums", dependencies=[])
 
-func_spec = colonies.create_func_spec(func=sum_nums, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100) 
+func_spec = create_func_spec(func=sum_nums, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100) 
 wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
 
 processgraph = colonies.submit(wf, executor_prvkey)

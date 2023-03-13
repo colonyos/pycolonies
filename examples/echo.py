@@ -1,6 +1,7 @@
 import sys
 sys.path.append(".")
 from colonies import Colonies
+from colonies import create_func_spec
 
 colonies = Colonies("localhost", 50080)
 
@@ -12,14 +13,14 @@ def foo(arg1, arg2):
     a = arg1 + arg2
     return a  
 
-func_spec = colonies.create_func_spec(func="echo", 
-                                      args=["helloworld"], 
-                                      colonyid=colonyid, 
-                                      executortype="echo_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100)
+func_spec = create_func_spec(func="echo", 
+                             args=["helloworld"], 
+                             colonyid=colonyid, 
+                             executortype="echo_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 
 process = colonies.submit(func_spec, executor_prvkey)
 print("Process", process["processid"], "submitted")

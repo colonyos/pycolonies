@@ -1,6 +1,7 @@
 import sys
 sys.path.append(".")
 from colonies import Colonies
+from colonies import create_func_spec
 
 colonies = Colonies("localhost", 50080)
 
@@ -11,14 +12,14 @@ executor_prvkey = "ddf7f7791208083b6a9ed975a72684f6406a269cfa36f1b1c32045c0a71ff
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2
 
-func_spec = colonies.create_func_spec(func=sum_nums, 
-                                      args=[1, 2], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100)
+func_spec = create_func_spec(func=sum_nums, 
+                             args=[1, 2], 
+                             colonyid=colonyid, 
+                             executortype="python_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 
 # submit the function spec to the colonies server
 process = colonies.submit(func_spec, executor_prvkey)

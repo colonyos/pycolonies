@@ -34,11 +34,11 @@ class PythonExecutor:
         
         try:
             self.colonies.add_function(self.executorid, 
-                                     self.colonyid, 
-                                     "echo",  
-                                     ["arg"], 
-                                     "Python function that returns it input as output", 
-                                     self.executor_prvkey)
+                                       self.colonyid, 
+                                       "echo",  
+                                       ["arg"], 
+                                       "Python function that returns it input as output", 
+                                       self.executor_prvkey)
             
         except Exception as err:
             print(err)
@@ -49,13 +49,16 @@ class PythonExecutor:
                 process = self.colonies.assign(self.colonyid, 10, self.executor_prvkey)
                 print("Process", process["processid"], "is assigned to executor")
                 if process["spec"]["funcname"] == "echo":
-                    arg = ""
-                    assigned_args = process["spec"]["args"]
-                    if len(assigned_args)>0:
-                        arg = assigned_args[0]
+                    # if "in" is defined, it is the output of the parent process,
+                    # use the output from parent process instead of args
+                    if len(process["in"])>0:
+                        args = process["in"]
+                    else:
+                        args = process["spec"]["args"]
+                
 
                     # just set output to input value 
-                    self.colonies.close(process["processid"], [arg], self.executor_prvkey)
+                    self.colonies.close(process["processid"], [args[0]], self.executor_prvkey)
             except Exception as err:
                 print(err)
                 pass

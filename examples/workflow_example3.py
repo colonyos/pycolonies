@@ -1,6 +1,7 @@
 import sys
 sys.path.append(".")
 from colonies import Colonies
+from colonies import create_func_spec
 from colonies import Workflow
 colonies = Colonies("localhost", 50080)
 
@@ -17,21 +18,20 @@ def map(ctx={}):
     executor_prvkey = ctx["executor_prvkey"]
   
     processgraph = colonies.get_processgraph(processgraphid, executor_prvkey)
-    print(processgraph)
     reduce_process = colonies.find_process("reduce", processgraph["processids"], executor_prvkey)
     reduce_processid = reduce_process["processid"]
 
     insert = True
     for i in range(5):
-        func_spec = colonies.create_func_spec(func="gen_nums", 
-                                              args=[], 
-                                              colonyid=ctx["colonyid"], 
-                                              executortype="python_executor",
-                                              priority=200,
-                                              maxexectime=100,
-                                              maxretries=3,
-                                              maxwaittime=100,
-                                              code=code)
+        func_spec = create_func_spec(func="gen_nums", 
+                                     args=[], 
+                                     colonyid=ctx["colonyid"], 
+                                     executortype="python_executor",
+                                     priority=200,
+                                     maxexectime=100,
+                                     maxretries=3,
+                                     maxwaittime=100,
+                                     code=code)
 
 
         colonies.add_child(processgraphid, map_processid, reduce_processid, func_spec, "gen_nums_" + str(i), insert, executor_prvkey)
@@ -44,24 +44,24 @@ def reduce(*nums, ctx={}):
     return total 
 
 wf = Workflow(colonyid)
-func_spec = colonies.create_func_spec(func=map, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100)
+func_spec = create_func_spec(func=map, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 wf.add(func_spec, nodename="map", dependencies=[])
 
-func_spec = colonies.create_func_spec(func=reduce, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100) 
+func_spec = create_func_spec(func=reduce, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100) 
 wf.add(func_spec, nodename="reduce", dependencies=["map"])
 
 processgraph = colonies.submit(wf, executor_prvkey)

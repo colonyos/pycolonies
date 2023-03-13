@@ -3,6 +3,7 @@ sys.path.append(".")
 from crypto import Crypto
 from colonies import Colonies
 from colonies import ColoniesConnectionError
+from colonies import create_func_spec
 import signal
 import base64 
 import os
@@ -37,37 +38,8 @@ class PythonExecutor:
         except Exception as err:
             print(err)
             sys.exit(-1)
+        
         print("Executor", self.executorid, "registered")
-                
-        try:
-            self.colonies.add_function(self.executorid, 
-                                     self.colonyid, 
-                                     "map",  
-                                     [], 
-                                     "Python function", 
-                                     self.executor_prvkey)
-            self.colonies.add_function(self.executorid, 
-                                     self.colonyid, 
-                                     "gen_nums",  
-                                     [], 
-                                     "Python function", 
-                                     self.executor_prvkey)
-            
-            self.colonies.add_function(self.executorid, 
-                                     self.colonyid, 
-                                     "sum_nums",  
-                                     ["n1","n2"], 
-                                     "Python function", 
-                                     self.executor_prvkey)
-            
-            self.colonies.add_function(self.executorid, 
-                                     self.colonyid, 
-                                     "reduce",  
-                                     ["*nums"], 
-                                     "Python function", 
-                                     self.executor_prvkey)
-        except Exception as err:
-            print(err)
    
     def start(self):
         while (True):
@@ -89,8 +61,17 @@ class PythonExecutor:
                 # extract args and call the function code we just injected
                 funcspec = assigned_process["spec"]
                 funcname = funcspec["funcname"]
+                try:
+                    self.colonies.add_function(self.executorid, 
+                                             self.colonyid, 
+                                             funcname,  
+                                             funcspec["env"]["args_spec"].split(","), 
+                                             "Python function", 
+                                             self.executor_prvkey)
+                except Exception as err:
+                    print(err)
 
-                # if in is defined, it is the output of the parent process,
+                # if "in" is defined, it is the output of the parent process,
                 # use the output from parent process instead of args
                 if len(assigned_process["in"])>0:
                     args = []
@@ -115,7 +96,6 @@ class PythonExecutor:
                     print(code)
                     self.colonies.fail(assigned_process["processid"], ["Failed to execute function"], self.executor_prvkey)
                     continue
-               
 
                 # close the process as successful
                 self.colonies.close(assigned_process["processid"], [res], self.executor_prvkey)

@@ -137,14 +137,14 @@ INFO[0000] Starting a Colonies client                    Insecure=true ServerHos
 We can of course also submit a function specification directly from Python.
 ```python
 colonies = Colonies("localhost", 50080)
-func_spec = colonies.create_func_spec(func="echo", 
-                                      args=["helloworld"], 
-                                      colonyid=colonyid, 
-                                      executortype="echo_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100)
+func_spec = create_func_spec(func="echo", 
+                             args=["helloworld"], 
+                             colonyid=colonyid, 
+                             executortype="echo_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 
 process = colonies.submit(func_spec, executor_prvkey)
 ```
@@ -180,7 +180,7 @@ colonies.add_executor(executor, colony_prvkey)
 colonies.approve_executor(executorid, colony_prvkey)
 ```
 
-We are also going to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. One important reason to register the function is to prevent execution arbitrary functions (e.g. rm -rf *). This is going to be extra important when using code injection in the next section.
+We are also going to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. 
 
 ```python
 colonies.add_function(executorid, 
@@ -261,14 +261,14 @@ We can now create a distributed Python application where parts of the code runs 
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2
 
-func_spec = colonies.create_func_spec(func=sum_nums, 
-                                      args=[1, 2], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor",
-                                      priority=200,
-                                      maxexectime=100,
-                                      maxretries=3,
-                                      maxwaittime=100)
+func_spec = create_func_spec(func=sum_nums, 
+                             args=[1, 2], 
+                             colonyid=colonyid, 
+                             executortype="python_executor",
+                             priority=200,
+                             maxexectime=100,
+                             maxretries=3,
+                             maxwaittime=100)
 
 submitted_process = colonies.submit(func_spec, executor_prvkey)
 completed_process = colonies.wait(submitted_process, 100, executor_prvkey)
@@ -325,16 +325,16 @@ def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
 wf = Workflow(colonyid)
-func_spec = colonies.create_func_spec(func=gen_nums, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor")
+func_spec = create_func_spec(func=gen_nums, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor")
 wf.add(func_spec, nodename="gen_nums", dependencies=[])
 
-func_spec = colonies.create_func_spec(func=sum_nums, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor")
+func_spec = create_func_spec(func=sum_nums, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor")
 wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
 
 processgraph = colonies.submit(wf, executor_prvkey)
@@ -361,15 +361,15 @@ def map(ctx={}):
 
     insert = True
     for i in range(5):
-        func_spec = colonies.create_func_spec(func="gen_nums", 
-                                              args=[], 
-                                              colonyid=ctx["colonyid"], 
-                                              executortype="python_executor",
-                                              priority=200,
-                                              maxexectime=100,
-                                              maxretries=3,
-                                              maxwaittime=100,
-                                              code=code)
+        func_spec = create_func_spec(func="gen_nums", 
+                                     args=[], 
+                                     colonyid=ctx["colonyid"], 
+                                     executortype="python_executor",
+                                     priority=200,
+                                     maxexectime=100,
+                                     maxretries=3,
+                                     maxwaittime=100,
+                                     code=code)
 
 
         colonies.add_child(processgraphid, map_processid, reduce_processid, func_spec, "gen_nums_" + str(i), insert, executor_prvkey)
@@ -390,16 +390,16 @@ We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_n
 
 ```python
 wf = Workflow(colonyid)
-func_spec = colonies.create_func_spec(func=map, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor")
+func_spec = create_func_spec(func=map, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor")
 wf.add(func_spec, nodename="map", dependencies=[])
 
-func_spec = colonies.create_func_spec(func=reduce, 
-                                      args=[], 
-                                      colonyid=colonyid, 
-                                      executortype="python_executor")
+func_spec = create_func_spec(func=reduce, 
+                             args=[], 
+                             colonyid=colonyid, 
+                             executortype="python_executor")
 wf.add(func_spec, nodename="reduce", dependencies=["map"])
 
 processgraph = colonies.submit(wf, executor_prvkey)
@@ -408,7 +408,7 @@ processgraph = colonies.submit(wf, executor_prvkey)
 ![MapReduce example](docs/images/mapreduce.png)
 
 # Monadic workflows
-The workflow code can be significantly simplified by expressing it as a monad. A good introduction to monads can be found [here](https://brian-candler.medium.com/function-composition-with-bind-4f6e3fdc0e7). The example below is not a complete monad, but just illustrated how the Colonies *plumbing* can be removed and create elegant functional expressions.  
+The workflow code can be significantly simplified by expressing it as a monad. A good introduction to monads can be found [here](https://brian-candler.medium.com/function-composition-with-bind-4f6e3fdc0e7). The example below is not a complete monad, but illustrated how the Colonies *plumbing* can be removed and create elegant functional expressions. The `>>` operator is usually call the `bind` functions and makes it possible to chain function calls.   
 
 ```python
 def gen_data(ctx={}):
@@ -425,4 +425,45 @@ result = (m >> gen_data >> process_data).unwrap()
 print(result)  # prints 3 
 ```
 
-See [colonies_monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example.py) for a full example.
+```console
+python3 python3.9 examples/monad_example1.py
+```
+
+In another terminal:
+```console
+python3 examples/python_executor.py
+
+Executor cb374a47111eedc99acf47387a4d7b54aa1b2bf4d33f75f3d32a3db900eb0001 registered
+
+Process dc371c61ee14ea48abd9868f5c577126e5dbf53832994e0f1ae5d1a0f18c74b3 is assigned to Executor
+Executing: gen_data
+
+Process 3ada72c617ab5b8640a4d62c6a5e39742512b5559b75ae94dca1b5b659bde925 is assigned to Executor
+Executing: process_data
+```
+
+See [colonies_monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example1.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example1.py) for a full example.
+
+## Support executors of different type
+In the previous example, it is not possible to set conditions on function specs. This can problem can be solved by introducing another type called `Function`. Note that this also makes it possible to specify a function name instead of a Python function definition. This makes it possible to execute functions on any executor and not only the `python_executor`. In the example below, we are going to send the output of the `process_data` function to the `echo_executor`. 
+
+```python
+def gen_data(ctx={}):
+    return 1, 2 
+
+def process_data(*nums, ctx={}):
+    total = 0
+    for n in nums:
+        total += n
+    return total 
+
+gen_data = Function(gen_data, colonyid, executortype="python_executor")
+process_data = Function(process_data, colonyid, executortype="python_executor")
+echo = Function("echo", colonyid, executortype="echo_executor")
+
+m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
+result = (m >> gen_data >> process_data >> echo).unwrap()
+print(result)  # prints 3 
+```
+
+See [colonies_monad_v2.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad_v2.py) and [monad_v2_example2.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_v2_example2.py) for a full example.
