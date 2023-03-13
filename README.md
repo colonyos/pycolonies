@@ -1,12 +1,36 @@
 # Introduction
-This repo contains a Python implementation of the [Colonies API](https://github.com/colonyos/colonies), making it possible to implement Colonies executors and applications in Python.
+This repo contains a Python implementation of the [Colonies API](https://github.com/colonyos/colonies), making it possible to implement Colonies executors and applications in Python. 
 
+In the tutorial below, we are going to implement a Python application where parts of the code is *offloaded* and executed on a remote server, a so-called executor. There are a couple of reasons why we want to do this.
+
+1. We want to reduce resource consumption on the client, e.g. CPU intensive code can run on a remote server.
+2. We want to scale the applications by using many computers, e.g. using MapReduce patterns or create so-called worker queues for batch processing.
+3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, so-called **compute continuums.
+4. We want to create robust applications, e.g. we want to guarantee that a function is called event some computer fails.
+
+We may also want a framework that hides away all the complexity of a distributed system. What about if you could write the following applications
+
+```python
+def gen_data():
+    return 1, 2
+
+def process_data(*data):
+    total = 0
+    for n in nums:
+        total += n
+    return total 
+
+m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
+m >> gen_data >> process_data).unwrap())
+```
+, where the `gen_data` function is automatically deployed and executed on an IoT device, and the `process_data` function is deployed and executed on an edge server?
+
+# Getting started
 The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path to the cryptolib.so using an environmental variable.
 ```bash
 export CRYPTOLIB=".../colonies/lib/cryptolib.so"
 ```
 
-# Getting started
 ## Starting a Colonies server
 You need to have access to a Colonies server. On Linux, run the commands below to start a server. See the [Colonies release page](https://github.com/colonyos/colonies/releases) for Windows and Mac binaries.
 
@@ -152,7 +176,7 @@ colonies.add_executor(executor, colony_prvkey)
 colonies.approve_executor(executorid, colony_prvkey)
 ```
 
-We are also going to register the *echo* function, telling the Colonies server that this executor is capable of executing a function called *echo*. One important reason to register the function is to prevent execution arbitrary functions (e.g. rm -rf *). This is going to be extra important when using code injection in the next section.
+We are also going to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. One important reason to register the function is to prevent execution arbitrary functions (e.g. rm -rf *). This is going to be extra important when using code injection in the next section.
 
 ```python
 colonies.add_function(executorid, 
@@ -163,7 +187,7 @@ colonies.add_function(executorid,
                       executor_prvkey)
 ```
 
-The next step is to connect the Colonies server to get process assignments. Note that the Colonies server never establish connections to the executors, but rather executors connects to the Colonies server. In this way, executors may run behind firewalls without problems. The *assign* function below will block for 10 seconds if there are no suitable process assignments.
+The next step is to connect the Colonies server to get process assignments. Note that the Colonies server never establish connections to the executors, but rather executors connects to the Colonies server. In this way, executors may run behind firewalls without problems. The `assign` function below will block for 10 seconds if there are no suitable process assignments.
 
 ```python
 process = colonies.assign(colonyid, 10, executor_prvkey)
@@ -181,9 +205,9 @@ python3 examples/echo_executor.py
 ```
 
 # Code-injection
-Python has a built-in *eval()* function that allows execution of any piece of Python code encoded as strings. We are going to use the *eval()* function to implement an executor that can execute arbitrary Python functions.
+Python has a built-in `eval()` function that allows execution of any piece of Python code encoded as strings. We are going to use the `eval()` function to implement an executor that can execute arbitrary Python functions.
    
-Python also has support introspection, which allows Python code to examine itself. We are going to use that to get the source code of function definitions, e.g. the echo function.
+Python also has support introspection, which allows Python code to examine itself. We are going to use that to get the source code of function definitions, e.g. the `echo` function.
 ```python
 def echo(arg)
     return arg
@@ -246,7 +270,7 @@ submitted_process = colonies.submit(func_spec, executor_prvkey)
 completed_process = colonies.wait(submitted_process, 100, executor_prvkey)
 ```
 
-The *wait()* function blocks until the submitted process is completed, either successful or failed.
+The `wait()` function blocks until the submitted process is completed, either successful or failed.
 
 See [func_spec_example1.py](https://github.com/colonyos/pycolonies/blob/main/examples/func_spec_example1.py) and [python_executor.py](https://github.com/colonyos/pycolonies/blob/main/examples/python_executor.py) for a full example. Type the commands below to try it out. 
 
@@ -287,7 +311,7 @@ Function:
 # Workflows
 Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several functions, i.e. control the order which functions are called and pass values between function calls. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, **creating compute continuums**. 
 
-The example below calculates *sum_nums(gen_nums())*. The *gen_nums()* function simply return a tuple containing 1 and 2. The *sum_nums()* function takes two arguments and calculates the sum of them.
+The example below calculates `sum_nums(gen_nums())`. The `gen_nums()` function simply return a tuple containing 1 and 2. The `sum_nums()*` function takes two arguments and calculates the sum of them.
 
 ```python
 def gen_nums(ctx={}):
@@ -313,9 +337,9 @@ processgraph = colonies.submit(wf, executor_prvkey)
 ```
 
 ## Dynamic processgraphs
- It also possible to dynamically modify a processgraph while it is still active, e.g. a function may submit more functions to a workflow while executing. This makes it possible to implement patterns like [map-reduce](https://en.wikipedia.org/wiki/MapReduce).
+ It also possible to dynamically modify a processgraph while it is still active, e.g. a function may submit more functions to a workflow while executing. This makes it possible to implement patterns like [MapReduce](https://en.wikipedia.org/wiki/MapReduce).
 
-The *map()* function below dynamically adds 5 *gen_nums()* functions to the processgraph.
+The `map()` function below dynamically adds 5 `gen_nums()` functions to the processgraph.
 
 ```python
 def map(ctx={}):
@@ -348,7 +372,7 @@ def map(ctx={}):
         insert = False
 ```
 
-The *reduce()* function takes arbitrary integer arguments and returns the sum of them. 
+The `reduce()` function takes arbitrary integer arguments and returns the sum of them. 
 
 ```python
 def reduce(*nums, ctx={}):
@@ -358,7 +382,7 @@ def reduce(*nums, ctx={}):
     return total 
 ```
 
-We can now create a workflow to calulate: *reduce(gen_nums(), gen_nums(), gen_nums(), gen_nums(), gen_nums())*. The result should be (1+2)*5=15.
+We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_nums(), gen_nums(), gen_nums())`. The result should be (1+2)*5=15.
 
 ```python
 wf = Workflow(colonyid)
