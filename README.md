@@ -5,8 +5,8 @@ In the tutorial below, we are going to implement a Python application where part
 
 1. We want to reduce resource consumption on the client, e.g. CPU intensive code can run on a remote server.
 2. We want to scale the applications by using many computers, e.g. using MapReduce patterns or create so-called worker queues for batch processing.
-3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, so-called **compute continuums.
-4. We want to create robust applications, e.g. we want to guarantee that a function is called event some computer fails.
+3. We want to create a distributed applications running across many platforms and infrastructure, e.g. parts of the code runs on an edge server, some parts in the cloud, creating so-called **compute continuums, where the code can still be expressed as a single uniform code in one place.
+4. We want to create robust applications, e.g. we want to guarantee that a function is called even if some computers fails.
 
 We may also want a framework that hides away all the complexity of a distributed system. What about if you could write the following applications
 
@@ -24,6 +24,8 @@ m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
 m >> gen_data >> process_data).unwrap())
 ```
 , where the `gen_data` function is automatically deployed and executed on an IoT device, and the `process_data` function is deployed and executed on an edge server?
+
+In this tutorial we are going to explore this possibility. 
 
 # Getting started
 The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path to the cryptolib.so using an environmental variable.
