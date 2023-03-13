@@ -14,10 +14,10 @@ We may also want a framework that hides away all the complexity of a distributed
 def gen_data():
     return 1, 2
 
-def process_data(*data):
+def process_data(*nums, ctx={}):
     total = 0
-    for d in data:
-        total += d
+    for n in nums:
+        total += n
     return total 
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
