@@ -3,6 +3,7 @@ sys.path.append(".")
 from colonies import Colonies
 from colonies import create_func_spec
 from colonies import Workflow
+import time
 colonies = Colonies("localhost", 50080)
 
 colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
@@ -11,6 +12,7 @@ executor_prvkey = "ddf7f7791208083b6a9ed975a72684f6406a269cfa36f1b1c32045c0a71ff
 
 def map(ctx={}):
     code = """def gen_nums(ctx={}):
+                time.sleep(2)
                 return 1, 2""" 
   
     processgraphid = ctx["process"]["processgraphid"]
@@ -20,6 +22,8 @@ def map(ctx={}):
     processgraph = colonies.get_processgraph(processgraphid, executor_prvkey)
     reduce_process = colonies.find_process("reduce", processgraph["processids"], executor_prvkey)
     reduce_processid = reduce_process["processid"]
+
+    time.sleep(5)
 
     insert = True
     for i in range(5):

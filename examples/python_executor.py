@@ -9,6 +9,7 @@ import base64
 import os
 import uuid
 import inspect
+import time
 
 class PythonExecutor:
     def __init__(self):
@@ -90,6 +91,7 @@ class PythonExecutor:
                            "colonyid": self.colonyid,
                            "executorid": self.executorid,
                            "executor_prvkey": self.executor_prvkey}
+
                     res = eval(funcname)(*tuple(args), ctx=ctx)
                 except Exception as err:
                     print("Failed to execute function:", err)
@@ -100,7 +102,7 @@ class PythonExecutor:
                 # close the process as successful
                 self.colonies.close(assigned_process["processid"], [res], self.executor_prvkey)
             except ColoniesConnectionError as err:
-                print(err)
+                # print(err)
                 sys.exit(-1)
             except Exception as err:
                 pass
