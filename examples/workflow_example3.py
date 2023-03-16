@@ -70,5 +70,5 @@ print("Workflow", processgraph["processgraphid"], "submitted")
 
 # wait for the sum_list process
 process = colonies.find_process("reduce", processgraph["processids"], executor_prvkey)
-process = colonies.wait(process, 100, executor_prvkey)
+process = colonies.wait(process, 1000, executor_prvkey)
 print(process["out"][0])

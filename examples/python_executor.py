@@ -72,16 +72,19 @@ class PythonExecutor:
                 except Exception as err:
                     print(err)
 
-                # if "in" is defined, it is the output of the parent process,
-                # use the output from parent process instead of args
-                if len(assigned_process["in"])>0:
-                    args = []
-                    for args_from_parent in assigned_process["in"]:
-                        if args_from_parent is not None:
-                            for a in args_from_parent:
-                                args.append(a)
-                else:
-                    args = funcspec["args"]
+                try:
+                    # if "in" is defined, it is the output of the parent process,
+                    # use the output from parent process instead of args
+                    if assigned_process["in"] is not None and len(assigned_process["in"])>0:
+                        args = []
+                        for args_from_parent in assigned_process["in"]:
+                            if args_from_parent is not None:
+                                for a in args_from_parent:
+                                    args.append(a)
+                    else:
+                        args = funcspec["args"]
+                except Exception as err:
+                    print(err)
 
                 print("Executing:", funcspec["funcname"])
 
@@ -102,7 +105,7 @@ class PythonExecutor:
                 # close the process as successful
                 self.colonies.close(assigned_process["processid"], [res], self.executor_prvkey)
             except ColoniesConnectionError as err:
-                # print(err)
+                print(err)
                 sys.exit(-1)
             except Exception as err:
                 pass
