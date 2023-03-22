@@ -76,11 +76,18 @@ class PythonExecutor:
                     # if "in" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
                     if assigned_process["in"] is not None and len(assigned_process["in"])>0:
-                        args = []
-                        for args_from_parent in assigned_process["in"]:
-                            if args_from_parent is not None:
-                                for a in args_from_parent:
-                                    args.append(a)
+                        args = assigned_process["in"] 
+                        print("args:", args)
+                        # print("1")
+                        # print(assigned_process["in"])
+                        # for args_from_parent in assigned_process["in"]:
+                        #     print("2")
+                        #     if args_from_parent is not None:
+                        #         print("3")
+                        #         print("args_from_parent", args_from_parent)
+                        #         for a in args_from_parent:
+                        #             print("4")
+                        #             args.append(a)
                     else:
                         args = funcspec["args"]
                 except Exception as err:
@@ -94,8 +101,20 @@ class PythonExecutor:
                            "colonyid": self.colonyid,
                            "executorid": self.executorid,
                            "executor_prvkey": self.executor_prvkey}
-
+   
+                    if len(args)==0:
+                        print("XXXXXXXX")
+                    print("args=",args)
                     res = eval(funcname)(*tuple(args), ctx=ctx)
+                    if res is not None:
+                        print("res", res)
+                        if type(res) is tuple:
+                            res_arr = list(res)
+                        else:
+                            res_arr = [res]
+                        print("res_arr=",res_arr)
+                    else:
+                        res_arr = []
                 except Exception as err:
                     print("Failed to execute function:", err)
                     print(code)
@@ -103,7 +122,7 @@ class PythonExecutor:
                     continue
 
                 # close the process as successful
-                self.colonies.close(assigned_process["processid"], [res], self.executor_prvkey)
+                self.colonies.close(assigned_process["processid"], res_arr, self.executor_prvkey)
             except ColoniesConnectionError as err:
                 print(err)
                 sys.exit(-1)

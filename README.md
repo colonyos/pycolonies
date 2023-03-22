@@ -35,6 +35,11 @@ The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However,
 export CRYPTOLIB=".../colonies/lib/cryptolib.so"
 ```
 
+## Python dependencies
+```bash
+pip3.9 install websocket-client
+```
+
 ## Starting a Colonies server
 You need to have access to a Colonies server. On Linux, run the commands below to start a server. See the [Colonies release page](https://github.com/colonyos/colonies/releases) for Windows and Mac binaries.
 
@@ -420,43 +425,6 @@ def process_data(*nums, ctx={}):
         total += n
     return total 
 
-m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
-result = (m >> gen_data >> process_data).unwrap()
-print(result)  # prints 3 
-```
-
-```console
-python3 python3.9 examples/monad_example1.py
-```
-
-In another terminal:
-```console
-python3 examples/python_executor.py
-
-Executor cb374a47111eedc99acf47387a4d7b54aa1b2bf4d33f75f3d32a3db900eb0001 registered
-
-Process dc371c61ee14ea48abd9868f5c577126e5dbf53832994e0f1ae5d1a0f18c74b3 is assigned to Executor
-Executing: gen_data
-
-Process 3ada72c617ab5b8640a4d62c6a5e39742512b5559b75ae94dca1b5b659bde925 is assigned to Executor
-Executing: process_data
-```
-
-See [colonies_monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example1.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example1.py) for a full example.
-
-## Support executors of different type
-In the previous example, it is not possible to set conditions on function specs. This can problem can be solved by introducing another type called `Function`. Note that this also makes it possible to specify a function name instead of a Python function definition. This makes it possible to execute functions on any executor and not only the `python_executor`. In the example below, we are going to send the output of the `process_data` function to the `echo_executor`. 
-
-```python
-def gen_data(ctx={}):
-    return 1, 2 
-
-def process_data(*nums, ctx={}):
-    total = 0
-    for n in nums:
-        total += n
-    return total 
-
 gen_data = Function(gen_data, colonyid, executortype="python_executor")
 process_data = Function(process_data, colonyid, executortype="python_executor")
 echo = Function("echo", colonyid, executortype="echo_executor")
@@ -466,4 +434,4 @@ result = (m >> gen_data >> process_data >> echo).unwrap()
 print(result)  # prints 3 
 ```
 
-See [colonies_monad_v2.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad_v2.py) and [monad_v2_example2.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_v2_example2.py) for a full example.
+See [colonies_monad.py](https://github.com/colonyos/pycolonies/blob/main/examples/colonies_monad.py) and [monad_example2.py](https://github.com/colonyos/pycolonies/blob/main/examples/monad_example2.py) for a full example.

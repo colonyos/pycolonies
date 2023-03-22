@@ -1,46 +1,54 @@
 import sys
 sys.path.append(".")
 from colonies import Colonies
-from colonies import create_func_spec
 from colonies import Workflow
+from colonies import create_func_spec 
+
+class Function:
+    def __init__(self,
+                 func,
+                 colonyid, 
+                 executortype, 
+                 priority=0, 
+                 maxexectime=200, 
+                 maxretries=3,
+                 maxwaittime=-1):
+        self.func_spec = create_func_spec(func=func, 
+                                          args=[], 
+                                          colonyid=colonyid, 
+                                          executortype=executortype,
+                                          priority=priority,
+                                          maxexectime=maxexectime,
+                                          maxretries=maxretries,
+                                          maxwaittime=maxwaittime)
+        if isinstance(func, str):
+            self.name = func 
+        else:
+            self.name = func.__name__ 
+
 
 class ColoniesMonad:
     def __init__(self, 
                  host, 
                  port, 
                  colonyid, 
-                 executor_prvkey, 
-                 executor="python_executor", 
-                 priority=0, 
-                 maxexectime=200, 
-                 maxretries=3,
-                 maxwaittime=-1):
+                 executor_prvkey): 
         self.wf = Workflow(colonyid)
         self.colonyid = colonyid
         self.executor_prvkey = executor_prvkey
-        self.executor=executor
-        self.priority = priority
-        self.maxexectime = maxexectime
-        self.maxretries = maxretries
-        self.maxwaittime = maxwaittime
         self.prev_func = None
         self.colonies = Colonies(host, port)
 
-    def __rshift__(self, func):  # bind function
-        func_spec =create_func_spec(func=func, 
-                                    args=[], 
-                                    colonyid=self.colonyid, 
-                                    executortype=self.executor,
-                                    priority=self.priority,
-                                    maxexectime=self.maxexectime,
-                                    maxretries=self.maxretries,
-                                    maxwaittime=self.maxwaittime)
+    def __ror__(self, other):
+        pass
+
+    def __rshift__(self, f):  # bind function
         if self.prev_func is None:
-            self.wf.add(func_spec, nodename=func.__name__, dependencies=[])
-            self.prev_func = func.__name__
+            self.wf.add(f.func_spec, nodename=f.name, dependencies=[])
+            self.prev_func = f.name
         else:
-            self.wf.add(func_spec, nodename=func.__name__, dependencies=[self.prev_func])
-            self.prev_func = func.__name__
+            self.wf.add(f.func_spec, nodename=f.name, dependencies=[self.prev_func])
+            self.prev_func = f.name
         
         return self
 
@@ -48,4 +56,7 @@ class ColoniesMonad:
         processgraph = self.colonies.submit(self.wf, self.executor_prvkey)
         last_process = self.colonies.find_process(self.prev_func, processgraph["processids"], self.executor_prvkey)
         process = self.colonies.wait(last_process, 100, self.executor_prvkey)
-        return process["out"][0]
+
+        if len(process["out"])>0:
+            return process["out"][0]
+        return ""
