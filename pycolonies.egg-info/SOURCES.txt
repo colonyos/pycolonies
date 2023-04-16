@@ -1,9 +1,0 @@
-README.md
-crypto.py
-pycolonies.py
-setup.py
-pycolonies.egg-info/PKG-INFO
-pycolonies.egg-info/SOURCES.txt
-pycolonies.egg-info/dependency_links.txt
-pycolonies.egg-info/requires.txt
-pycolonies.egg-info/top_level.txt
