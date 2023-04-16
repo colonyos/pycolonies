@@ -1,15 +1,10 @@
-import sys
-sys.path.append(".")
 from crypto import Crypto
-from colonies import Colonies
-from colonies import ColoniesConnectionError
-from colonies import create_func_spec
+from pycolonies import Colonies
+from pycolonies import ColoniesConnectionError
 import signal
 import base64 
 import os
 import uuid
-import inspect
-import time
 
 class PythonExecutor:
     def __init__(self):

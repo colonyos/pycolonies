@@ -4,7 +4,7 @@ import string
 import random
 sys.path.append(".")
 from crypto import Crypto
-from colonies import Colonies
+from pycolonies import Colonies
 
 class TestColonies(unittest.TestCase):
     def setUp(self):

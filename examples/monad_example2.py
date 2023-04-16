@@ -1,7 +1,5 @@
-import sys
-sys.path.append(".")
-from colonies import Colonies
-from colonies import Workflow
+from pycolonies import Colonies
+from pycolonies import Workflow
 from colonies_monad import ColoniesMonad
 from colonies_monad import Function
 

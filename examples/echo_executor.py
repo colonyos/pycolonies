@@ -1,7 +1,5 @@
-import sys
-sys.path.append(".")
-from crypto import Crypto
-from colonies import Colonies
+from pycolonies import Crypto
+from pycolonies import Colonies
 import signal
 import os
 import uuid 

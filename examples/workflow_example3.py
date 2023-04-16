@@ -1,9 +1,8 @@
 import sys
-sys.path.append(".")
-from colonies import Colonies
-from colonies import create_func_spec
-from colonies import Workflow
-import time
+from pycolonies import Colonies
+from pycolonies import create_func_spec
+from pycolonies import Workflow
+
 colonies = Colonies("localhost", 50080)
 
 colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"

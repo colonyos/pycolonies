@@ -1,8 +1,6 @@
-import sys
-sys.path.append(".")
-from colonies import Colonies
-from colonies import create_func_spec
-from colonies import Workflow
+from pycolonies import Colonies
+from pycolonies import create_func_spec
+from pycolonies import Workflow
 
 colonies = Colonies("localhost", 50080)
 

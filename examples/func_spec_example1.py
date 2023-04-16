@@ -1,7 +1,5 @@
-import sys
-sys.path.append(".")
-from colonies import Colonies
-from colonies import create_func_spec
+from pycolonies import Colonies
+from pycolonies import create_func_spec
 
 colonies = Colonies("localhost", 50080)
 

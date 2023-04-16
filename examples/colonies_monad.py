@@ -1,8 +1,6 @@
-import sys
-sys.path.append(".")
-from colonies import Colonies
-from colonies import Workflow
-from colonies import create_func_spec 
+from pycolonies import Colonies
+from pycolonies import Workflow
+from pycolonies import create_func_spec 
 
 class Function:
     def __init__(self,
