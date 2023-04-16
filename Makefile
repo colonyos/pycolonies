@@ -11,7 +11,7 @@ test:
 
 .PHONY: github_test
 github_test:
-	@cp ./lib/libcryptolib.so /usr/local/lib/libcryptolib.so
+	cp ./lib/libcryptolib.so /usr/local/lib/libcryptolib.so
 	@pip3 install -r requirements.txt
 	@python3 ./test/crypto_test.py
 	@python3 ./test/colonies_test.py
