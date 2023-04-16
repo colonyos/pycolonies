@@ -1,5 +1,5 @@
 # Introduction
-This repo contains [Colonies](https://github.com/colonyos/colonies) Python SDK, making it possible to implement Colonies executors in Python. 
+This repo contains [Colonies](https://github.com/colonyos/colonies) Python SDK, making it possible to implement Colonies Executors in Python. 
 
 # Installation 
 Note that the SDK has only be tested on Linux and MacOS. 
@@ -35,7 +35,7 @@ INFO[0001] Press ctrl+c to exit
 ```
 
 ## Calling a function 
-To execute a function, a function specification must be submitted to the Colonies server. Colonies will then wrap the function specification in a process and assign the process to an executor.
+To execute a function, a function specification must be submitted to the Colonies server. Colonies will then wrap the function specification in a process and assign the process to an Executor.
 
 Below is an example of function specification.
 ```json
@@ -122,7 +122,7 @@ Attributes:
 No attributes found
 ```
 
-The command below shows all waiting processes. Note that the process is just enqueued since we don't yet have an executor of the type *echo_executor*. 
+The command below shows all waiting processes. Note that the process is just enqueued since we don't yet have an Executor of the type *echo_executor*. 
 ```console
 colonies process psw
 INFO[0000] Starting a Colonies client                    Insecure=true ServerHost=localhost ServerPort=50080
@@ -137,10 +137,10 @@ INFO[0000] Starting a Colonies client                    Insecure=true ServerHos
 python3 examples/echo.py
 ```
 
-## Implementing an executor in Python
-Executors are responsible for executing processes. They connects to the Colonies server and get process assignments. To be able to submit function specifications or get process assignments, an executor must be member of a Colony. Only the Colony owner has the authority to add an Executor to a Colony. In order to interact with the Colonies server, an Executor must authenticate and prove its membership. This security mechanism is implemented through the utilization of public key encryption.
+## Implementing an Executor in Python
+Executors are responsible for executing processes. They connect to the Colonies server and get process assignments. To be able to submit function specifications or get process assignments, an Executor must be a member of a Colony. Only the Colony owner has the authority to add an Executor to a Colony. In order to interact with the Colonies server and other Executors, Executors must authenticate and prove their membership. This security mechanism is implemented through the utilization of public key encryption.
 
-Since we have access to the Colony private key (see devenv file), we can implement a self-registering executor. 
+Since we have access to the Colony private key (see devenv file), we can implement a self-registering Executor. 
 ```python
 colonies = Colonies("localhost", 50080)
 crypto = Crypto()
@@ -171,7 +171,7 @@ colonies.add_function(executorid,
                       executor_prvkey)
 ```
 
-The next step is to connect the Colonies server and get process assignments. Note that the Colonies server never establish connections to the Executors, but rather it the responasible of the Executors to connects to the Colonies server. In this way, Executors may run behind firewalls without problems. The `assign` function below will block for 10 seconds if there are no suitable process to assign.
+The next step is to connect the Colonies server and get process assignments. Note that the Colonies server never establish connections to the Executors, but rather it the responsibility of the Executors to connects to the Colonies server. In this way, Executors may run behind firewalls without problems. The `assign` function below will block for 10 seconds if there are no suitable process to assign.
 
 ```python
 process = colonies.assign(colonyid, 10, executor_prvkey)
@@ -180,16 +180,16 @@ if process["spec"]["funcname"] == "echo":
     colonies.close(process["processid"], [arg], executor_prvkey)
 ```
 
-The *close* method sets the output (same the args in this case) and the process state to *successful*. Only the executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long an executor may run a process before it is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
+The *close* method sets the output (same the args in this case) and the process state to *successful*. Only the Executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long an executor may run a process before it is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
 
-See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo_executor.py) for a full example. Type the command below to start the *echo executor*. 
+See [echo_executor.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo_executor.py) for a full example. Type the command below to start the *echo Executor*. 
 
 ```console
 python3 examples/echo_executor.py
 ```
 
 # Workflows
-Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several functions, i.e. control the order which functions are called and pass values between function calls, even if they run on different executors. Since executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, **creating compute continuums**. 
+Colonies supports creation of computational DAGs (Directed Acyclic Graphs). This makes it possible to create dependencies between several functions, i.e. control the order which functions are called and pass values between function calls, even if they run on different Executors. Since Executors may reside *anywhere* on the Internet, we can create workflows that are executed across platforms and infrastructures, **creating compute continuums**. 
 
 The example below calculates `sum_nums(gen_nums())`. The `gen_nums()` function simply return a tuple containing 1 and 2. The `sum_nums()*` function takes two arguments and calculates the sum of them.
 
