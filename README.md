@@ -1,5 +1,5 @@
 # Introduction
-This repo contains [Colonies](https://github.com/colonyos/colonies) Python SDK, making it possible to implement Colonies Executors in Python. 
+This repo contains a Python [Colonies](https://github.com/colonyos/colonies), making it possible to implement Colonies Executors in Python. 
 
 # Installation 
 Note that the SDK has only be tested on Linux and MacOS. 
