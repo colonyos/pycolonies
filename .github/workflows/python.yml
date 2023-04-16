@@ -38,4 +38,4 @@ jobs:
         python-version: 3.9
 
     - name: Test
-      run: TZ=Europe/Stockholm make github_test 
+      run: TZ=Europe/Stockholm CRYPTOLIB=/home/runner/work/pycolonies/pycolonies/lib/libcryptolib.so make github_test 
