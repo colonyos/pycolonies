@@ -56,6 +56,11 @@ jobs:
             COLONIES_EXCLUSIVE_ASSIGN: true
         ports:
           - 50080:50080
+        options: >-
+          --health-cmd "colonies server status"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v2
 
