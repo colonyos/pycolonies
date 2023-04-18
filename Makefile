@@ -14,6 +14,7 @@ github_test:
 	wget https://github.com/colonyos/colonies/releases/download/v1.0.3/colonies_1.0.3_linux_amd64.tar.gz
 	tar -xzf colonies_1.0.3_linux_amd64.tar.gz
 	env
+	./colonies database create
 	./colonies keychain add --id ${COLONIES_SERVER_ID} --prvkey ${COLONIES_SERVER_PRVKEY}
 	./colonies keychain add --id ${COLONIES_COLONY_ID} --prvkey ${COLONIES_COLONY_PRVKEY}
 	./colonies keychain add --id ${COLONIES_EXECUTOR_ID} --prvkey ${COLONIES_EXECUTOR_PRVKEY}
