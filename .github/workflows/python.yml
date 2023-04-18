@@ -17,7 +17,7 @@ jobs:
         image: postgres
         # provide the password for postgres
         env:
-          postgres_password: rfclgnkgsntksg6pgtn9cuml4xxbq7
+          POSTGRES_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
         # set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -45,7 +45,6 @@ jobs:
             COLONIES_DB_HOST: localhost
             COLONIES_DB_USER: postgres
             COLONIES_DB_PORT: 5432
-            POSTGRES_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
             COLONIES_DB_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
             COLONIES_COLONY_ID: 4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4
             COLONIES_COLONY_PRVKEY: ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514
