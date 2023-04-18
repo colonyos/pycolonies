@@ -50,7 +50,6 @@ jobs:
           COLONIES_GENERATOR_CHECKER_PERIOD: 1000
           COLONIES_EXCLUSIVE_ASSIGN: true
         options: >-
-          --entrypoint colonies dev 
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
