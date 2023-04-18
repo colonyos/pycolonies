@@ -13,7 +13,7 @@ test:
 github_test:
 	@pip3 install -r requirements.txt
 	@python3 ./test/crypto_test.py
-	@python3 ./test/colonies_test.py
+	@source devenv && python3 ./test/colonies_test.py
 
 .PHONY: install
 install:
