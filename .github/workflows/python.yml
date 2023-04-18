@@ -2,9 +2,9 @@ name: Python2
 
 on:
   push:
-    branches: [ github_action ]
+    branches: [ main ]
   pull_request:
-    branches: [ github_action ]
+    branches: [ main ]
 
 jobs:
   runner-job:
