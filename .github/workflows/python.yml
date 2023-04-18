@@ -1,10 +1,10 @@
-name: Python
+name: Python2
 
 on:
   push:
-    branches: [ main ]
+    branches: [ github_action ]
   pull_request:
-    branches: [ main ]
+    branches: [ github_action ]
 
 jobs:
   runner-job:
@@ -17,7 +17,7 @@ jobs:
         image: postgres
         # provide the password for postgres
         env:
-          postgres_password: rfclgnkgsntksg6pgtn9cuml4xxbq7
+          POSTGRES_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
         # set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -42,7 +42,7 @@ jobs:
             COLONIES_MONITOR_INTERVAL: 1
             COLONIES_SERVER_ID: 039231c7644e04b6895471dd5335cf332681c54e27f81fac54f9067b3f2c0103
             COLONIES_SERVER_PRVKEY: fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d
-            COLONIES_DB_HOST: localhost
+            COLONIES_DB_HOST: postgres
             COLONIES_DB_USER: postgres
             COLONIES_DB_PORT: 5432
             COLONIES_DB_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
@@ -54,9 +54,13 @@ jobs:
             COLONIES_CRON_CHECKER_PERIOD: 1000
             COLONIES_GENERATOR_CHECKER_PERIOD: 1000
             COLONIES_EXCLUSIVE_ASSIGN: true
-            CRYPTOLIB: /home/runner/work/pycolonies/pycolonies/lib/libcryptolib.so
         ports:
           - 50080:50080
+        options: >-
+          --health-cmd "colonies server status"
+          --health-interval 10s
+          --health-timeout 30s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v2
 
@@ -73,6 +77,10 @@ jobs:
         LC_CTYPE: UTF-8
         TZ: Europe/Stockholm
         COLONIES_TLS: false
+        COLONIES_DB_HOST: localhost
+        COLONIES_DB_USER: postgres
+        COLONIES_DB_PORT: 5432
+        COLONIES_DB_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
         COLONIES_SERVER_HOST: localhost
         COLONIES_SERVER_PORT: 50080
         COLONIES_SERVER_ID: 039231c7644e04b6895471dd5335cf332681c54e27f81fac54f9067b3f2c0103
@@ -82,4 +90,5 @@ jobs:
         COLONIES_EXECUTOR_ID: 3fc05cf3df4b494e95d6a3d297a34f19938f7daa7422ab0d4f794454133341ac
         COLONIES_EXECUTOR_PRVKEY: ddf7f7791208083b6a9ed975a72684f6406a269cfa36f1b1c32045c0a71fff05
         COLONIES_EXECUTOR_TYPE: cli
+        CRYPTOLIB: /home/runner/work/pycolonies/pycolonies/lib/libcryptolib.so
       run: make github_test 
