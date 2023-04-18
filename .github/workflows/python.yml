@@ -10,17 +10,6 @@ jobs:
   runner-job:
     runs-on: ubuntu-latest
     services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
       colonies:
         image: colonyos/colonies:v1.0.3 
         env:
@@ -49,11 +38,6 @@ jobs:
           COLONIES_CRON_CHECKER_PERIOD: 1000
           COLONIES_GENERATOR_CHECKER_PERIOD: 1000
           COLONIES_EXCLUSIVE_ASSIGN: true
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 50080:50080
     steps:
