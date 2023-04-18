@@ -39,6 +39,8 @@ jobs:
     services: 
       postgres:
         image: postgres
+        env:
+          postgres_password: rfclgnkgsntksg6pgtn9cuml4xxbq7
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
