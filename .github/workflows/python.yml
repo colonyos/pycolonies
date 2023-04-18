@@ -21,7 +21,7 @@ env:
     COLONIES_SERVER_PRVKEY: fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d
     COLONIES_DB_HOST: localhost
     COLONIES_DB_USER: postgres
-    COLONIES_DB_PORT: 50070
+    COLONIES_DB_PORT: 5432
     COLONIES_DB_PASSWORD: rFcLGNkgsNtksg6Pgtn9CumL4xXBQ7
     COLONIES_COLONY_ID: 4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4
     COLONIES_COLONY_PRVKEY: ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514
@@ -36,7 +36,18 @@ env:
 jobs:
   runner-job:
     runs-on: ubuntu-latest
-    services:
+    services: 
+      postgres:
+        image: postgres
+        env:
+          postgres_password: rfclgnkgsntksg6pgtn9cuml4xxbq7
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
       colonies:
         image: colonyos/colonies:v1.0.3 
         ports:
