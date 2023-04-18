@@ -1,4 +1,4 @@
-name: Python
+name: Python2
 
 on:
   push:
