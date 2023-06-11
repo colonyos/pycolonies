@@ -1,5 +1,5 @@
 from pycolonies import Colonies
-from pycolonies import create_func_spec
+from pycolonies import func_spec
 from pycolonies import Workflow
 
 colonies = Colonies("localhost", 50080)
@@ -15,25 +15,25 @@ def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
 wf = Workflow(colonyid)
-func_spec = create_func_spec(func=gen_nums, 
-                             args=[], 
-                             colonyid=colonyid, 
-                             executortype="python_executor",
-                             priority=200,
-                             maxexectime=100,
-                             maxretries=3,
-                             maxwaittime=100)
-wf.add(func_spec, nodename="gen_nums", dependencies=[])
+f = func_spec(func=gen_nums, 
+              args=[], 
+              colonyid=colonyid, 
+              executortype="python",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
+wf.add(f, nodename="gen_nums", dependencies=[])
 
-func_spec = create_func_spec(func=sum_nums, 
-                             args=[], 
-                             colonyid=colonyid, 
-                             executortype="python_executor",
-                             priority=200,
-                             maxexectime=100,
-                             maxretries=3,
-                             maxwaittime=100) 
-wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
+f = func_spec(func=sum_nums, 
+              args=[], 
+              colonyid=colonyid, 
+              executortype="python",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100) 
+wf.add(f, nodename="sum_nums", dependencies=["gen_nums"])
 
 processgraph = colonies.submit(wf, executor_prvkey)
 print("Workflow", processgraph["processgraphid"], "submitted")

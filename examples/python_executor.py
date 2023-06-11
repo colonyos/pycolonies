@@ -25,7 +25,7 @@ class PythonExecutor:
             "executorname": str(uuid.uuid4()),
             "executorid": self.executorid,
             "colonyid": self.colonyid,
-            "executortype": "python_executor"
+            "executortype": "python"
         }
         
         try:

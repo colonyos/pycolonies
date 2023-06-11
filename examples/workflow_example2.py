@@ -1,5 +1,5 @@
 from pycolonies import Colonies
-from pycolonies import create_func_spec
+from pycolonies import func_spec
 from pycolonies import Workflow
 
 colonies = Colonies("localhost", 50080)
@@ -18,30 +18,30 @@ def reduce(*nums, ctx={}):
     return total 
 
 wf = Workflow(colonyid)
-func_spec = create_func_spec(func=gen_nums, 
-                             args=[], 
-                             colonyid=colonyid, 
-                             executortype="python_executor",
-                             priority=200,
-                             maxexectime=100,
-                             maxretries=3,
-                             maxwaittime=100)
-wf.add(func_spec, nodename="gen_nums1", dependencies=[])
+f = func_spec(func=gen_nums, 
+              args=[], 
+              colonyid=colonyid, 
+              executortype="python",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
+wf.add(f, nodename="gen_nums1", dependencies=[])
 
-func_spec = create_func_spec(func=gen_nums, 
-                             args=[], 
-                             colonyid=colonyid, 
-                             executortype="python_executor",
-                             priority=200,
-                             maxexectime=100,
-                             maxretries=3,
-                             maxwaittime=100)
-wf.add(func_spec, nodename="gen_nums2", dependencies=[])
+f = func_spec(func=gen_nums, 
+              args=[], 
+              colonyid=colonyid, 
+              executortype="python",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
+wf.add(f, nodename="gen_nums2", dependencies=[])
 
-func_spec = create_func_spec(func=reduce, 
+func_spec = func_spec(func=reduce, 
                              args=[], 
                              colonyid=colonyid, 
-                             executortype="python_executor",
+                             executortype="python",
                              priority=200,
                              maxexectime=100,
                              maxretries=3,

@@ -22,9 +22,9 @@ def print_result(total, ctx={}):
     print("total=", total)
     return total
 
-gen_data_fn = Function(gen_data, colonyid, executortype="python_executor")
-process_data_fn = Function(process_data, colonyid, executortype="python_executor")
-print_fn = Function(print_result, colonyid, executortype="python_executor")
+gen_data_fn = Function(gen_data, colonyid, executortype="python")
+process_data_fn = Function(process_data, colonyid, executortype="python")
+print_fn = Function(print_result, colonyid, executortype="python")
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
 (m >> gen_data_fn >>  process_data_fn >> print_fn).unwrap()

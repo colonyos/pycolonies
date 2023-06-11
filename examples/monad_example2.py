@@ -16,8 +16,8 @@ def process_data(*nums, ctx={}):
         total += n
     return total 
 
-gen_data = Function(gen_data, colonyid, executortype="python_executor")
-process_data = Function(process_data, colonyid, executortype="python_executor")
+gen_data = Function(gen_data, colonyid, executortype="python")
+process_data = Function(process_data, colonyid, executortype="python")
 echo = Function("echo", colonyid, executortype="echo_executor")
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)

@@ -13,7 +13,7 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
     
-def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, maxretries, maxwaittime, code=None):
+def func_spec(func, args, colonyid, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None):
     if isinstance(func, str):
         func_spec = {
             "nodename": func,
@@ -88,10 +88,17 @@ class Colonies:
     SUCCESSFUL = 2
     FAILED = 3
     
-    def __init__(self, host, port):
-        self.url = "http://" + host + ":" + str(port) + "/api"
-        self.host = host
-        self.port = port
+    def __init__(self, host, port, tls=False):
+        if tls:
+            self.url = "https://" + host + ":" + str(port) + "/api"
+            self.host = host
+            self.port = port
+            self.tls = False
+        else:
+            self.url = "http://" + host + ":" + str(port) + "/api"
+            self.host = host
+            self.port = port
+            self.tls = True 
     
     def __rpc(self, msg, prvkey):
         payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
@@ -106,7 +113,7 @@ class Colonies:
 
         rpc_json = json.dumps(rpc) 
         try:
-            reply = requests.post(url = self.url, data=rpc_json, verify=False)
+            reply = requests.post(url = self.url, data=rpc_json, verify=True)
             reply_msg_json = json.loads(reply.content)
             base64_payload = reply_msg_json["payload"]
             payload_bytes = base64.b64decode(base64_payload)
@@ -143,7 +150,10 @@ class Colonies:
         crypto = Crypto()
         rpcmsg["signature"] = crypto.sign(rpcmsg["payload"], prvkey) 
 
-        ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
+        if self.tls:
+            ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
+        else:
+            ws = create_connection("wss://" + self.host + ":" + str(self.port) + "/pubsub")
         ws.send(json.dumps(rpcmsg))
         ws.recv()
         ws.close()

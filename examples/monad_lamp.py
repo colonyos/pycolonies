@@ -10,7 +10,7 @@ executor_prvkey = "ddf7f7791208083b6a9ed975a72684f6406a269cfa36f1b1c32045c0a71ff
 def decide_lamp_state(ctx={}):
     return "off"
 
-decide_lamp_state = Function(decide_lamp_state, colonyid, executortype="python_executor")
+decide_lamp_state = Function(decide_lamp_state, colonyid, executortype="python")
 set_lamp_state = Function("set_lamp_state", colonyid, executortype="lamp_executor")
 
 m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)

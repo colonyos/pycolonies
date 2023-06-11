@@ -1,0 +1,9 @@
+{
+    "conditions": {
+        "executortype": "fibonacci_executor"
+    },
+    "funcname": "fib",
+    "args": [
+        40
+    ]
+}
