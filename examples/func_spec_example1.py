@@ -1,5 +1,5 @@
 from pycolonies import Colonies
-from pycolonies import create_func_spec
+from pycolonies import func_spec
 
 colonies = Colonies("localhost", 50080)
 
@@ -12,14 +12,14 @@ def sum_nums(n1, n2, ctx={}):
     time.sleep(20)
     return n1 + n2
 
-func_spec = create_func_spec(func=sum_nums, 
-                             args=[1, 2], 
-                             colonyid=colonyid, 
-                             executortype="python_executor",
-                             priority=200,
-                             maxexectime=10,
-                             maxretries=3,
-                             maxwaittime=100)
+func_spec = func_spec(func=sum_nums, 
+                      args=[1, 2], 
+                      colonyid=colonyid, 
+                      executortype="python",
+                      priority=200,
+                      maxexectime=10,
+                      maxretries=3,
+                      maxwaittime=100)
 
 # submit the function spec to the colonies server
 process = colonies.submit(func_spec, executor_prvkey)

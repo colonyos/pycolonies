@@ -1,6 +1,6 @@
 from pycolonies import Colonies
 from pycolonies import Workflow
-from pycolonies import create_func_spec 
+from pycolonies import func_spec 
 
 class Function:
     def __init__(self,
@@ -11,14 +11,14 @@ class Function:
                  maxexectime=200, 
                  maxretries=3,
                  maxwaittime=-1):
-        self.func_spec = create_func_spec(func=func, 
-                                          args=[], 
-                                          colonyid=colonyid, 
-                                          executortype=executortype,
-                                          priority=priority,
-                                          maxexectime=maxexectime,
-                                          maxretries=maxretries,
-                                          maxwaittime=maxwaittime)
+        self.func_spec =_func_spec(func=func, 
+                                   args=[], 
+                                   colonyid=colonyid, 
+                                   executortype=executortype,
+                                   priority=priority,
+                                   maxexectime=maxexectime,
+                                   maxretries=maxretries,
+                                   maxwaittime=maxwaittime)
         if isinstance(func, str):
             self.name = func 
         else:
