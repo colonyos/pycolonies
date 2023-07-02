@@ -13,12 +13,13 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
     
-def func_spec(func, args, colonyid, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None):
+def func_spec(func, args, colonyid, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None):
     if isinstance(func, str):
         func_spec = {
             "nodename": func,
             "funcname": func, 
             "args": args,
+            "kwargs": kwargs,
             "priority": priority,
             "maxwaittime": maxwaittime,
             "maxexectime": maxexectime,
@@ -50,6 +51,7 @@ def func_spec(func, args, colonyid, executortype, priority=1, maxexectime=-1, ma
             "nodename": funcname,
             "funcname": funcname,
             "args": args,
+            "kwargs": kwargs,
             "priority": priority,
             "maxwaittime": maxwaittime,
             "maxexectime": maxexectime,

@@ -1,4 +1,5 @@
 from crypto import Crypto
+from pycolonies import func_spec
 from pycolonies import Colonies
 from pycolonies import ColoniesConnectionError
 import signal
@@ -72,17 +73,6 @@ class PythonExecutor:
                     # use the output from parent process instead of args
                     if assigned_process["in"] is not None and len(assigned_process["in"])>0:
                         args = assigned_process["in"] 
-                        print("args:", args)
-                        # print("1")
-                        # print(assigned_process["in"])
-                        # for args_from_parent in assigned_process["in"]:
-                        #     print("2")
-                        #     if args_from_parent is not None:
-                        #         print("3")
-                        #         print("args_from_parent", args_from_parent)
-                        #         for a in args_from_parent:
-                        #             print("4")
-                        #             args.append(a)
                     else:
                         args = funcspec["args"]
                 except Exception as err:
@@ -97,9 +87,6 @@ class PythonExecutor:
                            "executorid": self.executorid,
                            "executor_prvkey": self.executor_prvkey}
    
-                    if len(args)==0:
-                        print("XXXXXXXX")
-                    print("args=",args)
                     res = eval(funcname)(*tuple(args), ctx=ctx)
                     if res is not None:
                         print("res", res)

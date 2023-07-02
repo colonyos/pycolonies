@@ -11,7 +11,7 @@ class Function:
                  maxexectime=200, 
                  maxretries=3,
                  maxwaittime=-1):
-        self.func_spec =_func_spec(func=func, 
+        self.func_spec = func_spec(func=func, 
                                    args=[], 
                                    colonyid=colonyid, 
                                    executortype=executortype,

@@ -27,7 +27,7 @@ github_test:
 
 .PHONY: install
 install:
-	pip3 install dist/pycolonies-1.0.4-py3-none-any.whl
+	pip3 install dist/pycolonies-1.0.5-py3-none-any.whl
 
 publish:
-	python3 -m twine upload dist/pycolonies-1.0.4-py3-none-any.whl
+	python3 -m twine upload dist/pycolonies-1.0.5-py3-none-any.whl
