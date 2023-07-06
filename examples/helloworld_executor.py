@@ -34,8 +34,6 @@ class PythonExecutor:
             self.colonies.add_function(self.executorid, 
                                        self.colonyid, 
                                        "helloworld",  
-                                       [""], 
-                                       "Python function that says helloworld", 
                                        self.executor_prvkey)
             
         except Exception as err:

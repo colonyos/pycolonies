@@ -62,8 +62,6 @@ class PythonExecutor:
                     self.colonies.add_function(self.executorid, 
                                              self.colonyid, 
                                              funcname,  
-                                             funcspec["env"]["args_spec"].split(","), 
-                                             "Python function", 
                                              self.executor_prvkey)
                 except Exception as err:
                     print(err)

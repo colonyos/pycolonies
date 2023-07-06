@@ -4,19 +4,14 @@ import signal
 import os
 import uuid 
 
-def fib(n):
-    if n == 0 or n == 1:
-        return n
-    return fib(n - 1) + fib(n - 2)
-
-class Executor:
+class PythonExecutor:
     def __init__(self):
-        host = os.getenv("COLONIES_SERVER_HOST")
-        port = os.getenv("COLONIES_SERVER_PORT")
-        self.colonies = Colonies(host, port)
+        signal.signal(signal.SIGINT, sigint_handler)
+        
+        self.colonies = Colonies("localhost", 50080)
         crypto = Crypto()
-        self.colonyid = os.getenv("COLONIES_COLONY_ID")
-        self.colony_prvkey = os.getenv("COLONIES_COLONY_PRVKEY")
+        self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
+        self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
 
@@ -24,10 +19,10 @@ class Executor:
         
     def register(self):
         executor = {
-            "executorname": "fibonacci_executor_" + str(uuid.uuid4()),
+            "executorname": str(uuid.uuid4()),
             "executorid": self.executorid,
             "colonyid": self.colonyid,
-            "executortype": "fibonacci_executor"
+            "executortype": "echo_executor"
         }
         
         try:
@@ -40,23 +35,26 @@ class Executor:
         try:
             self.colonies.add_function(self.executorid, 
                                        self.colonyid, 
-                                       "fib",  
+                                       "echo",  
                                        self.executor_prvkey)
-            
         except Exception as err:
             print(err)
-            os._exit(0)
    
     def start(self):
         while (True):
             try:
                 process = self.colonies.assign(self.colonyid, 10, self.executor_prvkey)
                 print("Process", process["processid"], "is assigned to executor")
-                if process["spec"]["funcname"] == "fib":
-                    print("Calculating fib(" + str(process["spec"]["args"][0]) + ")")
-                    n = fib(process["spec"]["args"][0])
-                    print("Result is ", n)
-                    self.colonies.close(process["processid"], [str(n)], self.executor_prvkey)
+                if process["spec"]["funcname"] == "echo":
+                    # if "in" is defined, it is the output of the parent process,
+                    # use the output from parent process instead of args
+                    if len(process["in"])>0:
+                        args = process["in"]
+                    else:
+                        args = process["spec"]["args"]
+                
+                    # just set output to input value 
+                    self.colonies.close(process["processid"], [args[0]], self.executor_prvkey)
             except Exception as err:
                 print(err)
                 pass
@@ -69,7 +67,10 @@ class Executor:
 def sigint_handler(signum, frame):
     executor.unregister()
 
+def echo(args, kwargs, in):
+    return [args[0]]
+
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, sigint_handler)
-    executor = Executor()
+    executor = PythonExecutor()
+    executor.publish(echo)
     executor.start()

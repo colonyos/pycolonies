@@ -34,8 +34,6 @@ class PythonExecutor:
             self.colonies.add_function(self.executorid, 
                                        self.colonyid, 
                                        "echo",  
-                                       ["arg"], 
-                                       "Python function that returns it input as output", 
                                        self.executor_prvkey)
             
         except Exception as err:
@@ -53,7 +51,6 @@ class PythonExecutor:
                         args = process["in"]
                     else:
                         args = process["spec"]["args"]
-                
 
                     # just set output to input value 
                     self.colonies.close(process["processid"], [args[0]], self.executor_prvkey)

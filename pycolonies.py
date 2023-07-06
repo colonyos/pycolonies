@@ -321,13 +321,11 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def add_function(self, executorid, colonyid, funcname, args, desc, prvkey):
+    def add_function(self, executorid, colonyid, funcname, prvkey):
         func = {}
         func["executorid"] = executorid
         func["colonyid"] = colonyid
         func["funcname"] = funcname
-        func["args"] = args
-        func["desc"] = desc
        
         msg = {
             "msgtype": "addfunctionmsg",
