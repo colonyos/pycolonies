@@ -6,6 +6,23 @@ from crypto import Crypto
 import base64
 from websocket import create_connection
 import inspect
+import os
+
+def colonies_client():
+    colonies_server = os.getenv("COLONIES_SERVER_HOST")
+    colonies_port = os.getenv("COLONIES_SERVER_PORT")
+    colonies_tls = os.getenv("COLONIES_SERVER_TLS")
+    colonyid = os.getenv("COLONIES_COLONY_ID")
+    colony_prvkey = os.getenv("COLONIES_COLONY_PRVKEY")
+    executorid = os.getenv("COLONIES_EXECUTOR_ID")
+    executor_prvkey = os.getenv("COLONIES_EXECUTOR_PRVKEY")
+
+    if colonies_tls == "true":
+        client = Colonies(colonies_server, colonies_port, True)
+    else:
+        client = Colonies(colonies_server, colonies_port, False)
+
+    return client, colonyid, colony_prvkey, executorid, executor_prvkey
 
 class ColoniesConnectionError(Exception):
     pass
@@ -13,13 +30,14 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
     
-def func_spec(func, args, colonyid, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None):
+def func_spec(func, args, colonyid, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None, fs=None):
     if isinstance(func, str):
         func_spec = {
             "nodename": func,
             "funcname": func, 
             "args": args,
             "kwargs": kwargs,
+            "fs": fs,
             "priority": priority,
             "maxwaittime": maxwaittime,
             "maxexectime": maxexectime,
@@ -363,5 +381,67 @@ class Colonies:
             "childprocessid": childprocessid,
             "insert": insert,
             "spec": funcspec
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def create_snapshot(self, colonyid, label, name, prvkey):
+        msg = {
+            "msgtype": "createsnapshotmsg",
+            "colonyid": colonyid,
+            "label": label,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_snapshots(self, colonyid, prvkey):
+        msg = {
+            "msgtype": "getsnapshotsmsg",
+            "colonyid": colonyid,
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_snapshot_by_name(self, colonyid, name, prvkey):
+        msg = {
+            "msgtype": "getsnapshotmsg",
+            "colonyid": colonyid,
+            "snapshotid": "",
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_snapshot_by_id(self, colonyid, snapshotid, prvkey):
+        msg = {
+            "msgtype": "getsnapshotmsg",
+            "colonyid": colonyid,
+            "snapshotid": snapshotid,
+            "name": ""
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def add_log(self, processid, logmsg, prvkey):
+        msg = {
+            "msgtype": "addlogmsg",
+            "processid": processid,
+            "message": logmsg
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_process_log(self, processid, count, since, prvkey):
+        msg = {
+            "msgtype": "getlogsmsg",
+            "executorid": "",
+            "processid": processid,
+            "count": count,
+            "since": since
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def get_executor_log(self, executorid, count, since, prvkey):
+        msg = {
+            "msgtype": "getlogsmsg",
+            "executorid": executorid,
+            "processid": "",
+            "count": count,
+            "since": since
         }
         return self.__rpc(msg, prvkey)

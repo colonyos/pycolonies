@@ -288,7 +288,7 @@ class TestColonies(unittest.TestCase):
         added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
         self.colonies.approve_executor(executorid, colony_prvkey)
     
-        self.colonies.add_function(executorid, colonyid, "funcname", ["arg1", "arg2"], "test desc", executor_prvkey)
+        self.colonies.add_function(executorid, colonyid, "funcname", executor_prvkey)
 
         self.colonies.del_colony(colonyid, self.server_prv)
     
@@ -297,7 +297,7 @@ class TestColonies(unittest.TestCase):
         added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
         self.colonies.approve_executor(executorid, colony_prvkey)
     
-        self.colonies.add_function(executorid, colonyid, "funcname", ["arg1", "arg2"], "test desc", executor_prvkey)
+        self.colonies.add_function(executorid, colonyid, "funcname", executor_prvkey)
         functions = self.colonies.get_functions_by_colony(colonyid, executor_prvkey)
         self.assertTrue(len(functions)==1)
         self.assertEqual(functions[0]["funcname"], "funcname")
@@ -307,11 +307,58 @@ class TestColonies(unittest.TestCase):
         added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
         self.colonies.approve_executor(executorid, colony_prvkey)
     
-        self.colonies.add_function(executorid, colonyid, "funcname", ["arg1", "arg2"], "test desc", executor_prvkey)
+        self.colonies.add_function(executorid, colonyid, "funcname", executor_prvkey)
         functions = self.colonies.get_functions_by_executor(executorid, executor_prvkey)
         self.assertTrue(len(functions)==1)
         self.assertEqual(functions[0]["funcname"], "funcname")
 
+        self.colonies.del_colony(colonyid, self.server_prv)
+    
+    def test_create_snapshot(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
+        self.colonies.approve_executor(executorid, colony_prvkey)
+
+        self.colonies.create_snapshot(colonyid, "test_label", "test_name", executor_prvkey)
+        snapshots = self.colonies.get_snapshots(colonyid, executor_prvkey)
+        self.assertTrue(len(snapshots)==1)
+        snapshot = self.colonies.get_snapshot_by_name(colonyid, "test_name", executor_prvkey)
+        self.assertEqual(snapshot["name"], "test_name")
+        snapshot2 = self.colonies.get_snapshot_by_id(colonyid, snapshot["snapshotid"], executor_prvkey)
+        self.assertEqual(snapshot2["name"], "test_name")
+
+        self.colonies.del_colony(colonyid, self.server_prv)
+    
+    def test_get_add_logs(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
+        self.colonies.approve_executor(executorid, colony_prvkey)
+        
+        func_spec = {
+            "conditions": {
+                "colonyid": colonyid,
+                "executorids": [],
+                "executortype": "test_executor_type",
+            },
+            "env": {
+                "test_key": "test_value2"
+            },
+            "maxexectime": -1,
+            "maxretries": 3
+        }
+    
+        self.colonies.submit(func_spec, executor_prvkey)
+        assigned_process = self.colonies.assign(colonyid, 10, executor_prvkey)
+
+        self.colonies.add_log(assigned_process["processid"], "test_log_msg", executor_prvkey)
+        logs = self.colonies.get_process_log(assigned_process["processid"], 100, -1, executor_prvkey)
+        self.assertTrue(len(logs)==1)
+        self.assertEqual(logs[0]["message"], "test_log_msg")
+        
+        logs = self.colonies.get_executor_log(executorid, 100, -1, executor_prvkey)
+        self.assertTrue(len(logs)==1)
+        self.assertEqual(logs[0]["message"], "test_log_msg")
+   
         self.colonies.del_colony(colonyid, self.server_prv)
     
 if __name__ == '__main__':

@@ -6,10 +6,10 @@ import uuid
 
 class PythonExecutor:
     def __init__(self):
-        self.colonies = Colonies("localhost", 50080)
+        self.colonies = Colonies("colonies.colonyos.io", 443, tls=True)
         crypto = Crypto()
         self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
-        self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
+        self.colony_prvkey = "ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
 
