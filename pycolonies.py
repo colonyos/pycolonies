@@ -305,6 +305,15 @@ class Colonies:
 
         return self.__rpc(msg, prvkey)
     
+    def set_output(self, processid, arr, prvkey):
+        msg = {
+            "msgtype": "setoutputmsg",
+            "processid": processid,
+            "out": arr 
+        }
+
+        return self.__rpc(msg, prvkey)
+    
     def stats(self, colonyid, prvkey):
         msg = {
             "msgtype": "getcolonystatsmsg",

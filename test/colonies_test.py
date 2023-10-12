@@ -218,7 +218,7 @@ class TestColonies(unittest.TestCase):
         self.assertEqual(len(failed_processes), 1)
 
         self.colonies.del_colony(colonyid, self.server_prv)
- #    
+    
     def test_stats(self):
         added_colony, colonyid, colony_prvkey = self.add_test_colony()
         added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
@@ -250,6 +250,20 @@ class TestColonies(unittest.TestCase):
 
         self.colonies.del_colony(colonyid, self.server_prv)
     
+    def test_set_output(self):
+        added_colony, colonyid, colony_prvkey = self.add_test_colony()
+        added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
+        self.colonies.approve_executor(executorid, colony_prvkey)
+
+        self.submit_test_funcspec(colonyid, executor_prvkey)
+        assigned_process = self.colonies.assign(colonyid, 10, executor_prvkey)
+        self.colonies.set_output(assigned_process["processid"], ["output1", "output2"], executor_prvkey)
+  
+        process_from_server = self.colonies.get_process(assigned_process["processid"], executor_prvkey)
+        self.assertTrue(len(process_from_server["out"])==2)
+        self.assertTrue(process_from_server["out"][0]=="output1")
+        self.assertTrue(process_from_server["out"][1]=="output2")
+
     def test_add_attribute(self):
         added_colony, colonyid, colony_prvkey = self.add_test_colony()
         added_executor, executorid, executor_prvkey = self.add_test_executor(colonyid, colony_prvkey)
