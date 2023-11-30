@@ -11,7 +11,7 @@ class PythonExecutor:
     def __init__(self):
         self.colonies = Colonies("localhost", 50080)
         crypto = Crypto()
-        self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
+        self.colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
         self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
@@ -25,7 +25,7 @@ class PythonExecutor:
         executor = {
             "executorname": str(uuid.uuid4()),
             "executorid": self.executorid,
-            "colonyid": self.colonyid,
+            "colonyname": self.colonyname,
             "executortype": "python"
         }
         
@@ -43,7 +43,7 @@ class PythonExecutor:
             try:
                 # try to get a process from the colonies server, the call will block for max 10 seconds
                 # an exception will be raised if no processes can be assigned, and we will restart start the while loop
-                assigned_process = self.colonies.assign(self.colonyid, 10, self.executor_prvkey)
+                assigned_process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
                 print()
                 print("Process", assigned_process["processid"], "is assigned to Executor")
 
@@ -60,7 +60,7 @@ class PythonExecutor:
                 funcname = funcspec["funcname"]
                 try:
                     self.colonies.add_function(self.executorid, 
-                                             self.colonyid, 
+                                             self.colonyname, 
                                              funcname,  
                                              self.executor_prvkey)
                 except Exception as err:
@@ -81,7 +81,7 @@ class PythonExecutor:
                 # call the injected function
                 try:
                     ctx = {"process": assigned_process,
-                           "colonyid": self.colonyid,
+                           "colonyname": self.colonyname,
                            "executorid": self.executorid,
                            "executor_prvkey": self.executor_prvkey}
    

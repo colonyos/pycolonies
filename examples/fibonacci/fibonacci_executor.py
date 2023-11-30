@@ -15,7 +15,7 @@ class Executor:
         port = os.getenv("COLONIES_SERVER_PORT")
         self.colonies = Colonies(host, port)
         crypto = Crypto()
-        self.colonyid = os.getenv("COLONIES_COLONY_ID")
+        self.colonyname = os.getenv("COLONIES_COLONY_ID")
         self.colony_prvkey = os.getenv("COLONIES_COLONY_PRVKEY")
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
@@ -26,7 +26,7 @@ class Executor:
         executor = {
             "executorname": "fibonacci_executor_" + str(uuid.uuid4()),
             "executorid": self.executorid,
-            "colonyid": self.colonyid,
+            "colonyname": self.colonyname,
             "executortype": "fibonacci_executor"
         }
         
@@ -39,7 +39,7 @@ class Executor:
         
         try:
             self.colonies.add_function(self.executorid, 
-                                       self.colonyid, 
+                                       self.colonyname, 
                                        "fib",  
                                        self.executor_prvkey)
             
@@ -50,7 +50,7 @@ class Executor:
     def start(self):
         while (True):
             try:
-                process = self.colonies.assign(self.colonyid, 10, self.executor_prvkey)
+                process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
                 print("Process", process["processid"], "is assigned to executor")
                 if process["spec"]["funcname"] == "fib":
                     print("Calculating fib(" + str(process["spec"]["args"][0]) + ")")

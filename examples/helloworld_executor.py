@@ -8,7 +8,7 @@ class PythonExecutor:
     def __init__(self):
         self.colonies = Colonies("localhost", 50080)
         crypto = Crypto()
-        self.colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
+        self.colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
         self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
@@ -19,7 +19,7 @@ class PythonExecutor:
         executor = {
             "executorname": str(uuid.uuid4()),
             "executorid": self.executorid,
-            "colonyid": self.colonyid,
+            "colonyname": self.colonyname,
             "executortype": "helloworld_executor"
         }
         
@@ -32,7 +32,7 @@ class PythonExecutor:
         
         try:
             self.colonies.add_function(self.executorid, 
-                                       self.colonyid, 
+                                       self.colonyname, 
                                        "helloworld",  
                                        self.executor_prvkey)
             
@@ -42,7 +42,7 @@ class PythonExecutor:
     def start(self):
         while (True):
             try:
-                process = self.colonies.assign(self.colonyid, 10, self.executor_prvkey)
+                process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
                 print("Process", process["processid"], "is assigned to executor")
                 if process["spec"]["funcname"] == "helloworld":
                     self.colonies.close(process["processid"], ["helloworld"], self.executor_prvkey)

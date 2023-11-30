@@ -13,7 +13,7 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
     
-def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, maxretries, maxwaittime, code=None):
+def create_func_spec(func, args, colonyname, executortype, priority, maxexectime, maxretries, maxwaittime, code=None):
     if isinstance(func, str):
         func_spec = {
             "nodename": func,
@@ -24,7 +24,7 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
             "maxexectime": maxexectime,
             "maxretries": maxretries,
             "conditions": {
-                "colonyid": colonyid,
+                "colonyname": colonyname,
                 "executortype": executortype
             },
             "label": ""
@@ -55,7 +55,7 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
             "maxexectime": maxexectime,
             "maxretries": maxretries,
             "conditions": {
-                "colonyid": colonyid,
+                "colonyname": colonyname,
                 "executortype": executortype
             },
             "env": {
@@ -67,8 +67,8 @@ def create_func_spec(func, args, colonyid, executortype, priority, maxexectime, 
     return func_spec
 
 class Workflow:
-    def __init__(self, colonyid):
-        self.colonyid = colonyid
+    def __init__(self, colonyname):
+        self.colonyname = colonyname
         self.func_specs = []
 
     def add(self, func_spec, nodename, dependencies):
@@ -78,7 +78,7 @@ class Workflow:
 
     def workflow_spec(self):
         return { 
-                "colonyid" : self.colonyid,
+                "colonyname" : self.colonyname,
                 "functionspecs" : self.func_specs
                 }
 
@@ -157,10 +157,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def del_colony(self, colonyid, prvkey):
+    def del_colony(self, colonyname, prvkey):
         msg = {
             "msgtype": "deletecolonymsg",
-            "colonyid": colonyid
+            "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
     
@@ -170,10 +170,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def get_colony(self, colonyid, prvkey):
+    def get_colony(self, colonyname, prvkey):
         msg = {
             "msgtype": "getcolonymsg",
-            "colonyid": colonyid
+            "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
     
@@ -184,10 +184,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def list_executors(self, colonyid, prvkey):
+    def list_executors(self, colonyname, prvkey):
         msg = {
             "msgtype": "getexecutorsmsg",
-            "colonyid": colonyid
+            "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
     
@@ -226,18 +226,18 @@ class Colonies:
             }
             return self.__rpc(msg, prvkey)
     
-    def assign(self, colonyid, timeout, prvkey):
+    def assign(self, colonyname, timeout, prvkey):
         msg = {
             "msgtype": "assignprocessmsg",
             "timeout": timeout,
-            "colonyid": colonyid
+            "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
   
-    def list_processes(self, colonyid, count, state, prvkey):
+    def list_processes(self, colonyname, count, state, prvkey):
         msg = {
             "msgtype": "getprocessesmsg",
-            "colonyid": colonyid,
+            "colonyname": colonyname,
             "count": count,
             "state": state
         }
@@ -275,10 +275,10 @@ class Colonies:
 
         return self.__rpc(msg, prvkey)
     
-    def stats(self, colonyid, prvkey):
+    def stats(self, colonyname, prvkey):
         msg = {
             "msgtype": "getcolonystatsmsg",
-            "colonyid": colonyid
+            "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
     
@@ -309,10 +309,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def add_function(self, executorid, colonyid, funcname, args, desc, prvkey):
+    def add_function(self, executorid, colonyname, funcname, args, desc, prvkey):
         func = {}
         func["executorid"] = executorid
-        func["colonyid"] = colonyid
+        func["colonyname"] = colonyname
         func["funcname"] = funcname
         func["args"] = args
         func["desc"] = desc
@@ -330,10 +330,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def get_functions_by_colony(self, colonyid, prvkey):
+    def get_functions_by_colony(self, colonyname, prvkey):
         msg = {
             "msgtype": "getfunctionsmsg",
-            "colonyid": colonyid
+            "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
    

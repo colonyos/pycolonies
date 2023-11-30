@@ -68,7 +68,7 @@ Or using the Python SDK.
 ```python
 func_spec = create_func_spec(func=sum_nums, 
                              args=["helloworld"], 
-                             colonyid=colonyid, 
+                             colonyname=colonyname, 
                              executortype="echo_executor",
                              priority=0,
                              maxexectime=10,
@@ -146,7 +146,7 @@ Since we have access to the Colony private key (see devenv file), we can impleme
 ```python
 colonies = Colonies("localhost", 50080)
 crypto = Crypto()
-colonyid = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
+colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
 colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
 executor_prvkey = crypto.prvkey()
 executorid = crypto.id(executor_prvkey)
@@ -154,7 +154,7 @@ executorid = crypto.id(executor_prvkey)
 executor = {
     "executorname": "echo_executor",
     "executorid": executorid,
-    "colonyid": colonyid,
+    "colonyname": colonyname,
     "executortype": "echo_executor"
 }
 
@@ -166,7 +166,7 @@ We also need to register the `echo` function, telling the Colonies server that t
 
 ```python
 colonies.add_function(executorid, 
-                      colonyid, 
+                      colonyname, 
                       "echo",  
                       ["arg"], 
                       "Python function that returns its input as output", 
@@ -176,7 +176,7 @@ colonies.add_function(executorid,
 The next step is to connect the Colonies server and get process assignments. Note that the Colonies server never establish connections to the Executors, but rather it the responsibility of the Executors to connects to the Colonies server. In this way, Executors may run behind firewalls without problems. The `assign` function below will block for 10 seconds if there are no suitable process to assign.
 
 ```python
-process = colonies.assign(colonyid, 10, executor_prvkey)
+process = colonies.assign(colonyname, 10, executor_prvkey)
 if process["spec"]["funcname"] == "echo":
     assigned_args = process["spec"]["args"]
     colonies.close(process["processid"], [arg], executor_prvkey)
@@ -215,7 +215,7 @@ func_spec = {
     "maxexectime": 200,
     "maxretries": 3,
     "conditions": {
-        "colonyid": colonyid,
+        "colonyname": colonyname,
         "executortype": executortype
     },
     "env": {
@@ -226,7 +226,7 @@ func_spec = {
 
 The executor can now obtain the code, inject it, and then execute the specified function.
 ```python
-assigned_process = colonies.assign(colonyid, 10, executor_prvkey)
+assigned_process = colonies.assign(colonyname, 10, executor_prvkey)
 
 code_base64 = assigned_process["spec"]["env"]["code"]
 code_bytes2 = base64.b64decode(code_base64)
@@ -245,7 +245,7 @@ def sum_nums(n1, n2, ctx={}):
 
 func_spec = create_func_spec(func=sum_nums, 
                              args=[1, 2], 
-                             colonyid=colonyid, 
+                             colonyname=colonyname, 
                              executortype="python_executor",
                              priority=200,
                              maxexectime=100,
@@ -306,16 +306,16 @@ def gen_nums(ctx={}):
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
-wf = Workflow(colonyid)
+wf = Workflow(colonyname)
 func_spec = create_func_spec(func=gen_nums, 
                              args=[], 
-                             colonyid=colonyid, 
+                             colonyname=colonyname, 
                              executortype="python_executor")
 wf.add(func_spec, nodename="gen_nums", dependencies=[])
 
 func_spec = create_func_spec(func=sum_nums, 
                              args=[], 
-                             colonyid=colonyid, 
+                             colonyname=colonyname, 
                              executortype="python_executor")
 wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
 
@@ -345,7 +345,7 @@ def map(ctx={}):
     for i in range(5):
         func_spec = create_func_spec(func="gen_nums", 
                                      args=[], 
-                                     colonyid=ctx["colonyid"], 
+                                     colonyname=ctx["colonyname"], 
                                      executortype="python_executor",
                                      priority=200,
                                      maxexectime=100,
@@ -371,16 +371,16 @@ def reduce(*nums, ctx={}):
 We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_nums(), gen_nums(), gen_nums())`. The result should be (1+2)*5=15.
 
 ```python
-wf = Workflow(colonyid)
+wf = Workflow(colonyname)
 func_spec = create_func_spec(func=map, 
                              args=[], 
-                             colonyid=colonyid, 
+                             colonyname=colonyname, 
                              executortype="python_executor")
 wf.add(func_spec, nodename="map", dependencies=[])
 
 func_spec = create_func_spec(func=reduce, 
                              args=[], 
-                             colonyid=colonyid, 
+                             colonyname=colonyname, 
                              executortype="python_executor")
 wf.add(func_spec, nodename="reduce", dependencies=["map"])
 
@@ -402,11 +402,11 @@ def process_data(*nums, ctx={}):
         total += n
     return total 
 
-gen_data = Function(gen_data, colonyid, executortype="python_executor")
-process_data = Function(process_data, colonyid, executortype="python_executor")
-echo = Function("echo", colonyid, executortype="echo_executor")
+gen_data = Function(gen_data, colonyname, executortype="python_executor")
+process_data = Function(process_data, colonyname, executortype="python_executor")
+echo = Function("echo", colonyname, executortype="echo_executor")
 
-m = ColoniesMonad("localhost", 50080, colonyid, executor_prvkey)
+m = ColoniesMonad("localhost", 50080, colonyname, executor_prvkey)
 result = (m >> gen_data >> process_data >> echo).unwrap()
 print(result)  # prints 3 
 ```

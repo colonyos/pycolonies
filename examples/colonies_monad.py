@@ -5,7 +5,7 @@ from pycolonies import func_spec
 class Function:
     def __init__(self,
                  func,
-                 colonyid, 
+                 colonyname, 
                  executortype, 
                  priority=0, 
                  maxexectime=200, 
@@ -13,7 +13,7 @@ class Function:
                  maxwaittime=-1):
         self.func_spec = func_spec(func=func, 
                                    args=[], 
-                                   colonyid=colonyid, 
+                                   colonyname=colonyname, 
                                    executortype=executortype,
                                    priority=priority,
                                    maxexectime=maxexectime,
@@ -29,10 +29,10 @@ class ColoniesMonad:
     def __init__(self, 
                  host, 
                  port, 
-                 colonyid, 
+                 colonyname, 
                  executor_prvkey): 
-        self.wf = Workflow(colonyid)
-        self.colonyid = colonyid
+        self.wf = Workflow(colonyname)
+        self.colonyname = colonyname
         self.executor_prvkey = executor_prvkey
         self.prev_func = None
         self.colonies = Colonies(host, port)

@@ -11,13 +11,10 @@ test:
 
 .PHONY: github_test
 github_test:
-	wget https://github.com/colonyos/colonies/releases/download/v1.0.3/colonies_1.0.3_linux_amd64.tar.gz
-	tar -xzf colonies_1.0.3_linux_amd64.tar.gz
+	wget https://github.com/colonyos/colonies/releases/download/v1.7.1/colonies_1.7.1_linux_amd64.tar.gz
+	tar -xzf colonies_1.7.1_linux_amd64.tar.gz
 	env
 	./colonies database create
-	./colonies keychain add --id ${COLONIES_SERVER_ID} --prvkey ${COLONIES_SERVER_PRVKEY}
-	./colonies keychain add --id ${COLONIES_COLONY_ID} --prvkey ${COLONIES_COLONY_PRVKEY}
-	./colonies keychain add --id ${COLONIES_EXECUTOR_ID} --prvkey ${COLONIES_EXECUTOR_PRVKEY}
 	./colonies colony add --spec ./colony.json --colonyprvkey ${COLONIES_COLONY_PRVKEY}
 	./colonies executor add --spec ./cli_executor.json --executorprvkey ${COLONIES_EXECUTOR_PRVKEY}
 	./colonies executor approve --executorid ${COLONIES_EXECUTOR_ID}
@@ -27,7 +24,7 @@ github_test:
 
 .PHONY: install
 install:
-	pip3 install dist/pycolonies-1.0.10-py3-none-any.whl --force-reinstall 
+	pip3 install dist/pycolonies-1.0.11-py3-none-any.whl --force-reinstall 
 
 publish:
-	python3 -m twine upload dist/pycolonies-1.0.10-py3-none-any.whl 
+	python3 -m twine upload dist/pycolonies-1.0.11-py3-none-any.whl 
