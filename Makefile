@@ -15,7 +15,7 @@ github_test:
 	tar -xzf colonies_1.7.6_linux_amd64.tar.gz
 	env
 	./colonies database create
-	./colonies colony add --name ${COLONIES_COLONY_NAME} --colonyid ${COLONIES_COLONY_ID} --colonyprvkey ${COLONIES_COLONY_PRVKEY}
+	./colonies colony add --name ${COLONIES_COLONY_NAME} --colonyid ${COLONIES_COLONY_ID} 
 	./colonies executor add --spec ./cli_executor.json --executorprvkey ${COLONIES_PRVKEY}
 	./colonies executor approve --executorid ${COLONIES_EXECUTOR_ID}
 	@pip3 install -r requirements.txt
