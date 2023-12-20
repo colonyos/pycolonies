@@ -11,12 +11,12 @@ test:
 
 .PHONY: github_test
 github_test:
-	wget https://github.com/colonyos/colonies/releases/download/v1.7.1/colonies_1.7.1_linux_amd64.tar.gz
-	tar -xzf colonies_1.7.1_linux_amd64.tar.gz
+	wget https://github.com/colonyos/colonies/releases/download/v1.7.6/colonies_1.7.6_linux_amd64.tar.gz
+	tar -xzf colonies_1.7.6_linux_amd64.tar.gz
 	env
 	./colonies database create
-	./colonies colony add --spec ./colony.json --colonyprvkey ${COLONIES_COLONY_PRVKEY}
-	./colonies executor add --spec ./cli_executor.json --executorprvkey ${COLONIES_EXECUTOR_PRVKEY}
+	./colonies colony add --name ${COLONIES_COLONY_NAME} --colonyid ${COLONIES_COLONY_ID} --colonyprvkey ${COLONIES_COLONY_PRVKEY}
+	./colonies executor add --spec ./cli_executor.json --executorprvkey ${COLONIES_PRVKEY}
 	./colonies executor approve --executorid ${COLONIES_EXECUTOR_ID}
 	@pip3 install -r requirements.txt
 	@python3 ./test/crypto_test.py
