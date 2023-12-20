@@ -55,9 +55,9 @@ jobs:
             COLONIES_CRON_CHECKER_PERIOD: 1000
             COLONIES_GENERATOR_CHECKER_PERIOD: 1000
             COLONIES_EXCLUSIVE_ASSIGN: true
+            COLONIES_INITDB: true
         ports:
           - 50080:50080
-        args: colonies server start --initdb
         options: >-
           --health-cmd "colonies server status"
           --health-interval 10s
