@@ -16,8 +16,8 @@ github_test:
 	env
 	./colonies database create
 	./colonies colony add --name ${COLONIES_COLONY_NAME} --colonyid ${COLONIES_COLONY_ID} 
-	./colonies executor add --spec ./cli_executor.json --executorprvkey ${COLONIES_PRVKEY}
-	./colonies executor approve --executorid ${COLONIES_EXECUTOR_ID}
+	./colonies executor add --spec ./executor.json --executorid ${COLONIES_EXECUTOR_ID}
+	./colonies executor approve --name ${COLONIES_EXECUTOR_NAME}
 	@pip3 install -r requirements.txt
 	@python3 ./test/crypto_test.py
 	@python3 ./test/colonies_test.py
