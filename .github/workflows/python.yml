@@ -59,7 +59,7 @@ jobs:
         ports:
           - 50080:50080
         options: >-
-          --health-cmd "colonies server status"
+          --health-cmd "colonies server alive"
           --health-interval 1s
           --health-timeout 60s
           --health-retries 20
