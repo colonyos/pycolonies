@@ -76,7 +76,7 @@ jobs:
         LC_ALL: en_US.UTF-8
         LC_CTYPE: UTF-8
         TZ: Europe/Stockholm
-        COLONIES_TLS: false
+        COLONIES_SERVER_TLS: false
         COLONIES_DB_HOST: localhost
         COLONIES_DB_USER: postgres
         COLONIES_DB_PORT: 5432
