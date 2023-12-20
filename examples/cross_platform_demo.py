@@ -47,7 +47,7 @@ wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-4", dependencies=["ic
 wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-5", dependencies=["ice-0"])
 wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-6", dependencies=["ice-0"])
 wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-7", dependencies=["ice-0"])
-wf.add(gen_sleep("leonardo-booster-hpcexecutor"), nodename="leonardo-0", dependencies=["lumi-0", "lumi-1", "lumi-2", "lumi-3", "lumi-4", "lumi-5", "lumi-6", "lumi-7"])
-# print(wf)
+wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="leonardo-0", dependencies=["lumi-0", "lumi-1", "lumi-2", "lumi-3", "lumi-4", "lumi-5", "lumi-6", "lumi-7"])
+
 wf.add(gen_sleep("ice-kubeexecutor"), nodename="ice-1", dependencies=["leonardo-0"])
 colonies.submit(wf, executor_prvkey)

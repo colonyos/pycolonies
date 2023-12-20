@@ -1,5 +1,5 @@
 from pycolonies import Crypto
-from pycolonies import Colonies
+from pycolonies import colonies_client
 import signal
 import os
 import uuid 
@@ -11,12 +11,14 @@ def fib(n):
 
 class Executor:
     def __init__(self):
-        host = os.getenv("COLONIES_SERVER_HOST")
-        port = os.getenv("COLONIES_SERVER_PORT")
-        self.colonies = Colonies(host, port)
+        colonies, colonyname, colony_prvkey, _, _ = colonies_client()
+        self.colonies = colonies
+        self.colonyname = colonyname
+        self.colony_prvkey = colony_prvkey
+        self.executorname = "fibonacci-executor"
+        self.executortype = "fibonacci-executor"
+
         crypto = Crypto()
-        self.colonyname = os.getenv("COLONIES_COLONY_ID")
-        self.colony_prvkey = os.getenv("COLONIES_COLONY_PRVKEY")
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
 
@@ -24,18 +26,18 @@ class Executor:
         
     def register(self):
         executor = {
-            "executorname": "fibonacci_executor_" + str(uuid.uuid4()),
+            "executorname": self.executorname + str(uuid.uuid4()),
             "executorid": self.executorid,
             "colonyname": self.colonyname,
-            "executortype": "fibonacci_executor"
+            "executortype": self.executortype
         }
         
         try:
             self.colonies.add_executor(executor, self.colony_prvkey)
-            self.colonies.approve_executor(self.executorid, self.colony_prvkey)
+            self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
-        print("Executor", self.executorid, "registered")
+        print("Executor", self.executorname, "registered")
         
         try:
             self.colonies.add_function(self.executorid, 
@@ -62,8 +64,8 @@ class Executor:
                 pass
 
     def unregister(self):
-        self.colonies.delete_executor(self.executorid, self.colony_prvkey)
-        print("Executor", self.executorid, "unregistered")
+        self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
+        print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
 def sigint_handler(signum, frame):

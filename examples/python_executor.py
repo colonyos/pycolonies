@@ -1,42 +1,45 @@
 from crypto import Crypto
+from pycolonies import colonies_client
 from pycolonies import func_spec
-from pycolonies import Colonies
 from pycolonies import ColoniesConnectionError
 import signal
 import base64 
 import os
 import uuid
+import sys
 
 class PythonExecutor:
     def __init__(self):
-        self.colonies = Colonies("localhost", 50080)
+        global colonies
+        colonies, colonyname, colony_prvkey, _, _ = colonies_client()
         crypto = Crypto()
-        self.colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
-        self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
+        self.colonies = colonies
+        self.colonyname = colonyname
+        self.colony_prvkey= colony_prvkey
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
+        self.executorname = "python-executor"
+        self.executortype = "python-executor"
 
-        global colonies
-        colonies = self.colonies
 
         self.register()
         
     def register(self):
         executor = {
-            "executorname": str(uuid.uuid4()),
+            "executorname": self.executorname,
             "executorid": self.executorid,
             "colonyname": self.colonyname,
-            "executortype": "python"
+            "executortype": self.executortype
         }
         
         try:
             self.colonies.add_executor(executor, self.colony_prvkey)
-            self.colonies.approve_executor(self.executorid, self.colony_prvkey)
+            self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
             sys.exit(-1)
         
-        print("Executor", self.executorid, "registered")
+        print("Executor", self.executorname, "registered")
    
     def start(self):
         while (True):
@@ -59,8 +62,8 @@ class PythonExecutor:
                 funcspec = assigned_process["spec"]
                 funcname = funcspec["funcname"]
                 try:
-                    self.colonies.add_function(self.executorid, 
-                                             self.colonyname, 
+                    self.colonies.add_function(self.colonyname, 
+                                             self.executorname, 
                                              funcname,  
                                              self.executor_prvkey)
                 except Exception as err:
@@ -84,15 +87,13 @@ class PythonExecutor:
                            "colonyname": self.colonyname,
                            "executorid": self.executorid,
                            "executor_prvkey": self.executor_prvkey}
-   
+  
                     res = eval(funcname)(*tuple(args), ctx=ctx)
                     if res is not None:
-                        print("res", res)
                         if type(res) is tuple:
                             res_arr = list(res)
                         else:
                             res_arr = [res]
-                        print("res_arr=",res_arr)
                     else:
                         res_arr = []
                 except Exception as err:
@@ -101,6 +102,7 @@ class PythonExecutor:
                     self.colonies.fail(assigned_process["processid"], ["Failed to execute function"], self.executor_prvkey)
                     continue
 
+                print("done")
                 # close the process as successful
                 self.colonies.close(assigned_process["processid"], res_arr, self.executor_prvkey)
             except ColoniesConnectionError as err:
@@ -110,8 +112,8 @@ class PythonExecutor:
                 pass
 
     def unregister(self):
-        self.colonies.delete_executor(self.executorid, self.colony_prvkey)
-        print("Executor", self.executorid, "unregistered")
+        self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
+        print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
 def sigint_handler(signum, frame):

@@ -1,15 +1,18 @@
 from pycolonies import Crypto
-from pycolonies import Colonies
+from pycolonies import colonies_client
 import signal
 import os
-import uuid 
 
 class PythonExecutor:
     def __init__(self):
-        self.colonies = Colonies("localhost", 50080)
+        colonies, colonyname, colony_prvkey, _, _ = colonies_client()
+        self.colonies = colonies
+        self.colonyname = colonyname
+        self.colony_prvkey = colony_prvkey
+        self.executorname = "helloworld-executor"
+        self.executortype = "helloworld-executor"
+
         crypto = Crypto()
-        self.colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
-        self.colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
 
@@ -17,33 +20,32 @@ class PythonExecutor:
         
     def register(self):
         executor = {
-            "executorname": str(uuid.uuid4()),
+            "executorname": self.executorname,
             "executorid": self.executorid,
             "colonyname": self.colonyname,
-            "executortype": "helloworld_executor"
+            "executortype": self.executortype
         }
         
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
-            self.colonies.approve_executor(self.executorid, self.colony_prvkey)
-        except Exception as err:
-            print(err)
-        print("Executor", self.executorid, "registered")
-        
-        try:
-            self.colonies.add_function(self.executorid, 
-                                       self.colonyname, 
+            executor = self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
+            
+            self.colonies.add_function(self.colonyname, 
+                                       self.executorname, 
                                        "helloworld",  
                                        self.executor_prvkey)
-            
         except Exception as err:
             print(err)
-   
+            os._exit(0)
+        
+        print("Executor", self.executorname, "registered")
+        
     def start(self):
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
                 print("Process", process["processid"], "is assigned to executor")
+                self.colonies.add_log(process["processid"], "Hello from executor\n", self.executor_prvkey)
                 if process["spec"]["funcname"] == "helloworld":
                     self.colonies.close(process["processid"], ["helloworld"], self.executor_prvkey)
             except Exception as err:
@@ -51,8 +53,8 @@ class PythonExecutor:
                 pass
 
     def unregister(self):
-        self.colonies.delete_executor(self.executorid, self.colony_prvkey)
-        print("Executor", self.executorid, "unregistered")
+        self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
+        print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
 def sigint_handler(signum, frame):

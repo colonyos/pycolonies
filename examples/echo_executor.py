@@ -1,15 +1,17 @@
 from pycolonies import Crypto
-from pycolonies import Colonies
+from pycolonies import colonies_client
 import signal
 import os
 import uuid 
 
 class PythonExecutor:
     def __init__(self):
-        self.colonies = Colonies("colonies.colonyos.io", 443, tls=True)
+        colonies, colonyname, colony_prvkey, _, _ = colonies_client()
+        self.colonyname = colonyname
+        self.colonies = colonies
+        self.colony_prvkey = colony_prvkey
+
         crypto = Crypto()
-        self.colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
-        self.colony_prvkey = "ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
         self.executor_prvkey = crypto.prvkey()
         self.executorid = crypto.id(self.executor_prvkey)
 
@@ -17,22 +19,24 @@ class PythonExecutor:
         
     def register(self):
         executor = {
-            "executorname": str(uuid.uuid4()),
+            "executorname": "echo-executor",
             "executorid": self.executorid,
             "colonyname": self.colonyname,
-            "executortype": "echo_executor"
+            "executortype": "echo-executor"
         }
-        
+       
+        self.executorname = executor["executorname"]
+
         try:
             self.colonies.add_executor(executor, self.colony_prvkey)
-            self.colonies.approve_executor(self.executorid, self.colony_prvkey)
+            self.colonies.approve_executor(self.colonyname, executor["executorname"], self.colony_prvkey)
         except Exception as err:
             print(err)
-        print("Executor", self.executorid, "registered")
+        print("Executor", self.executorname, "registered")
         
         try:
-            self.colonies.add_function(self.executorid, 
-                                       self.colonyname, 
+            self.colonies.add_function(self.colonyname,
+                                       self.executorname, 
                                        "echo",  
                                        self.executor_prvkey)
             
@@ -59,8 +63,8 @@ class PythonExecutor:
                 pass
 
     def unregister(self):
-        self.colonies.delete_executor(self.executorid, self.colony_prvkey)
-        print("Executor", self.executorid, "unregistered")
+        self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
+        print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
 def sigint_handler(signum, frame):

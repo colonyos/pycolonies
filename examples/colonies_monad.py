@@ -27,15 +27,14 @@ class Function:
 
 class ColoniesMonad:
     def __init__(self, 
-                 host, 
-                 port, 
+                 colonies, 
                  colonyname, 
                  executor_prvkey): 
         self.wf = Workflow(colonyname)
         self.colonyname = colonyname
         self.executor_prvkey = executor_prvkey
         self.prev_func = None
-        self.colonies = Colonies(host, port)
+        self.colonies = colonies 
 
     def __ror__(self, other):
         pass

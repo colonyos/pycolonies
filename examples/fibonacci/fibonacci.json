@@ -1,6 +1,6 @@
 {
     "conditions": {
-        "executortype": "fibonacci_executor"
+        "executortype": "fibonacci-executor"
     },
     "funcname": "fib",
     "args": [

@@ -351,7 +351,7 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def add_function(self, executorname, colonyname, funcname, prvkey):
+    def add_function(self, colonyname, executorname, funcname, prvkey):
         func = {}
         func["executorname"] = executorname
         func["colonyname"] = colonyname
