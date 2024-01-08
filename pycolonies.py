@@ -157,6 +157,7 @@ class Colonies:
             "executortype": executortype,
             "state": state,
             "timeout": timeout,
+            "colonyname": process["spec"]["conditions"]["colonyname"],
             "msgtype": "subscribeprocessmsg"
         }
 
