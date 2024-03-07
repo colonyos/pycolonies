@@ -2,3 +2,4 @@ pycolonies.egg-info
 dist
 __pycache__/
 *.swp
+build

@@ -9,3 +9,4 @@ __author__ = 'Johan Kristiansson'
 __credits__ = 'ri.se'
 
 import crypto
+import cfs
