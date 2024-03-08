@@ -7,6 +7,7 @@ import base64
 from websocket import create_connection
 import inspect
 import os
+import ctypes
 
 def colonies_client():
     colonies_server = os.getenv("COLONIES_SERVER_HOST")
@@ -113,12 +114,12 @@ class Colonies:
             self.url = "https://" + host + ":" + str(port) + "/api"
             self.host = host
             self.port = port
-            self.tls = False
+            self.tls = True
         else:
             self.url = "http://" + host + ":" + str(port) + "/api"
             self.host = host
             self.port = port
-            self.tls = True 
+            self.tls = False 
     
     def __rpc(self, msg, prvkey):
         payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
@@ -440,9 +441,10 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def get_process_log(self, processid, count, since, prvkey):
+    def get_process_log(self, colonyname, processid, count, since, prvkey):
         msg = {
             "msgtype": "getlogsmsg",
+            "colonyname": colonyname,
             "executorid": "",
             "processid": processid,
             "count": count,
@@ -450,12 +452,34 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def get_executor_log(self, executorid, count, since, prvkey):
+    def get_executor_log(self, colonyname, executorname, count, since, prvkey):
         msg = {
             "msgtype": "getlogsmsg",
-            "executorid": executorid,
+            "colonyname": colonyname,
+            "executorname": executorname,
             "processid": "",
             "count": count,
             "since": since
         }
         return self.__rpc(msg, prvkey)
+
+    def sync(self, dir, label, keeplocal, colonyname, prvkey):
+        libname = os.environ.get("CFSLIB")
+        if libname == None:
+            libname = "/usr/local/lib/libcfslib.so"
+        c_lib = ctypes.CDLL(libname)
+        c_lib.sync.restype = ctypes.c_int
+        
+        c_host = ctypes.c_char_p(self.host.encode('utf-8'))
+        c_port = ctypes.c_int(self.port)
+        c_insecure = ctypes.c_int(self.tls==False)
+        c_skip_tls_verify = ctypes.c_int(False)
+        c_dir = ctypes.c_char_p(dir.encode('utf-8'))
+        c_label = ctypes.c_char_p(label.encode('utf-8'))
+        c_keeplocal = ctypes.c_int(keeplocal)
+        c_colonyname = ctypes.c_char_p(colonyname.encode('utf-8'))
+        c_prvkey = ctypes.c_char_p(prvkey.encode('utf-8'))
+
+        res = c_lib.sync(c_host, c_port, c_insecure, c_skip_tls_verify, c_dir, c_label, c_keeplocal, c_colonyname, c_prvkey)
+        if res != 0:
+            raise Exception("failed to sync")

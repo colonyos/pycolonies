@@ -21,7 +21,6 @@ class PythonExecutor:
         self.executorname = "python-executor"
         self.executortype = "python-executor"
 
-
         self.register()
         
     def register(self):

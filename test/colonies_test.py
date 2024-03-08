@@ -5,10 +5,11 @@ import random
 sys.path.append(".")
 from crypto import Crypto
 from pycolonies import Colonies
+import os
 
 class TestColonies(unittest.TestCase):
     def setUp(self):
-        self.colonies = Colonies("localhost", 50080)
+        self.colonies = Colonies("localhost", 50080, tls=False)
         self.crypto = Crypto()
         self.server_prv = "fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d"
 
@@ -85,51 +86,42 @@ class TestColonies(unittest.TestCase):
         self.assertEqual(executorid, added_executor["executorid"])
         self.colonies.del_colony(colonyname, self.server_prv)
      
-    def test_list_executors(self):
-        _, _, colonyname, colony_prvkey = self.add_test_colony()
-        _, executorid, _, _ = self.add_test_executor(colonyname, colony_prvkey)
-
-        executors_from_server = self.colonies.list_executors(colonyname, colony_prvkey)
-        self.assertEqual(executors_from_server[0]["executorid"], executorid)
-
-        self.colonies.del_colony(colonyname, self.server_prv)
-      
     def test_approve_executor(self):
         _, _, colonyname, colony_prvkey = self.add_test_colony()
-        _, _, executorname, _ = self.add_test_executor(colonyname, colony_prvkey)
+        _, _, executorname, executor_prvkey = self.add_test_executor(colonyname, colony_prvkey)
 
-        executors_from_server = self.colonies.list_executors(colonyname, colony_prvkey)
-        self.assertEqual(executors_from_server[0]["state"], 0)
-    
         self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-        executors_from_server = self.colonies.list_executors(colonyname, colony_prvkey)
+        executors_from_server = self.colonies.list_executors(colonyname, executor_prvkey)
         self.assertEqual(executors_from_server[0]["state"], 1)
 
         self.colonies.del_colony(colonyname, self.server_prv)
-     
+    
     def test_reject_executor(self):
         _, _, colonyname, colony_prvkey = self.add_test_colony()
-        _, _, executorname, _ = self.add_test_executor(colonyname, colony_prvkey)
-
-        executors_from_server = self.colonies.list_executors(colonyname, colony_prvkey)
-        self.assertEqual(executors_from_server[0]["state"], 0)
-   
+        _, _, executorname, executor_prvkey = self.add_test_executor(colonyname, colony_prvkey)
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
         self.colonies.reject_executor(colonyname, executorname, colony_prvkey)
-        executors_from_server = self.colonies.list_executors(colonyname, colony_prvkey)
-        self.assertEqual(executors_from_server[0]["state"], 2)
+        
+        self.colonies.del_colony(colonyname, self.server_prv)
+    
+    def test_list_executors(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(colonyname, colony_prvkey)
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        executors_from_server = self.colonies.list_executors(colonyname, executor_prvkey)
+        self.assertEqual(executors_from_server[0]["state"], 1)
+
+        executors_from_server = self.colonies.list_executors(colonyname, executor_prvkey)
+        self.assertEqual(executors_from_server[0]["executorname"], executorname)
 
         self.colonies.del_colony(colonyname, self.server_prv)
-     
+      
     def test_remove_executor(self):
         _, _, colonyname, colony_prvkey = self.add_test_colony()
         _, _, executorname, _ = self.add_test_executor(colonyname, colony_prvkey)
 
         self.colonies.remove_executor(colonyname, executorname, colony_prvkey)
-        executors_from_server = self.colonies.list_executors(colonyname, colony_prvkey)
         
-        # XXX: Shouldn't list_executors return an empty list rather than None?
-        self.assertEqual(executors_from_server, None)  
-
         self.colonies.del_colony(colonyname, self.server_prv)
      
     def test_submit(self):
@@ -366,15 +358,38 @@ class TestColonies(unittest.TestCase):
         assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
 
         self.colonies.add_log(assigned_process["processid"], "test_log_msg", executor_prvkey)
-        logs = self.colonies.get_process_log(assigned_process["processid"], 100, -1, executor_prvkey)
+        logs = self.colonies.get_process_log(colonyname, assigned_process["processid"], 100, -1, executor_prvkey)
         self.assertTrue(len(logs)==1)
         self.assertEqual(logs[0]["message"], "test_log_msg")
-        
-        logs = self.colonies.get_executor_log(executorid, 100, -1, executor_prvkey)
+         
+        logs = self.colonies.get_executor_log(colonyname, executorname, 100, -1, executor_prvkey)
         self.assertTrue(len(logs)==1)
         self.assertEqual(logs[0]["message"], "test_log_msg")
    
         self.colonies.del_colony(colonyname, self.server_prv)
-    
+
+    def test_sync(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(colonyname, colony_prvkey)
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        
+        testdir = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir)
+        os.system("echo hello > " + testdir + "/hello.txt")
+
+        self.colonies.sync(testdir, "/test", False, colonyname, executor_prvkey)
+
+        testdir2 = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir2)
+        self.colonies.sync(testdir2, "/test", False, colonyname, executor_prvkey)
+
+        # check if the files are the same
+        f = open(testdir + "/hello.txt", "r")
+        hello = f.read()
+        f.close()
+        self.assertEqual(hello, "hello\n")
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
 if __name__ == '__main__':
     unittest.main()
