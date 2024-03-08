@@ -12,6 +12,12 @@ jobs:
     # Service containers to run with `runner-job`
     services:
       # label used to access the service container
+      minio:
+        image: fclairamb/minio-github-actions
+        ports:
+          - 9000:9000
+        env:
+          MINIO_DOMAIN: localhost
       postgres:
         # docker hub image
         image: postgres
@@ -95,4 +101,11 @@ jobs:
         COLONIES_EXECUTOR_NAME: cli
         COLONIES_EXECUTOR_TYPE: cli
         CRYPTOLIB: /home/runner/work/pycolonies/pycolonies/lib/libcryptolib.so
+        CFSLIB: /home/runner/work/pycolonies/pycolonies/lib/libcfslib.so
+        AWS_S3_ENDPOINT: localhost:9000
+        AWS_S3_ACCESSKEY: minioadmin
+        AWS_S3_SECRETKEY: minioadmin
+        AWS_S3_TLS: false
+        AWS_S3_SKIPVERIFY: false
+        AWS_S3_BUCKET: test
       run: make github_test 
