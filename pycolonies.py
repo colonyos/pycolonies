@@ -19,9 +19,9 @@ def colonies_client():
     prvkey = os.getenv("COLONIES_PRVKEY")
 
     if colonies_tls == "true":
-        client = Colonies(colonies_server, colonies_port, True)
+        client = Colonies(colonies_server, int(colonies_port), True)
     else:
-        client = Colonies(colonies_server, colonies_port, False)
+        client = Colonies(colonies_server, int(colonies_port), False)
 
     return client, colonyname, colony_prvkey, executorname, prvkey
 

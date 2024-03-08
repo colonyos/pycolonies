@@ -24,7 +24,7 @@ github_test:
 
 .PHONY: install
 install:
-	pip3 install dist/pycolonies-1.0.13-py3-none-any.whl --force-reinstall 
+	pip3 install dist/pycolonies-1.0.14-py3-none-any.whl --force-reinstall 
 
 publish:
-	python3 -m twine upload dist/pycolonies-1.0.13-py3-none-any.whl 
+	python3 -m twine upload dist/pycolonies-1.0.14-py3-none-any.whl 
