@@ -11,7 +11,7 @@ test:
 
 .PHONY: github_test
 github_test:
-	wget https://github.com/colonyos/colonies/releases/download/v1.7.6/colonies_1.7.6_linux_amd64.tar.gz
+	wget https://github.com/colonyos/colonies/releases/download/v1.7.6/colonies_1.8.2_linux_amd64.tar.gz
 	tar -xzf colonies_1.8.2_linux_amd64.tar.gz
 	env
 	./colonies database create
