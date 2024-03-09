@@ -173,9 +173,9 @@ class Colonies:
         rpcmsg["signature"] = crypto.sign(rpcmsg["payload"], prvkey) 
 
         if self.tls:
-            ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
-        else:
             ws = create_connection("wss://" + self.host + ":" + str(self.port) + "/pubsub")
+        else:
+            ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
         ws.send(json.dumps(rpcmsg))
         ws.recv()
         ws.close()

@@ -12,7 +12,7 @@ test:
 .PHONY: github_test
 github_test:
 	wget https://github.com/colonyos/colonies/releases/download/v1.7.6/colonies_1.7.6_linux_amd64.tar.gz
-	tar -xzf colonies_1.7.6_linux_amd64.tar.gz
+	tar -xzf colonies_1.8.2_linux_amd64.tar.gz
 	env
 	./colonies database create
 	./colonies colony add --name ${COLONIES_COLONY_NAME} --colonyid ${COLONIES_COLONY_ID} 
@@ -24,7 +24,7 @@ github_test:
 
 .PHONY: install
 install:
-	pip3 install dist/pycolonies-1.0.14-py3-none-any.whl --force-reinstall 
+	pip3 install dist/pycolonies-1.0.15-py3-none-any.whl --force-reinstall 
 
 publish:
-	python3 -m twine upload dist/pycolonies-1.0.14-py3-none-any.whl 
+	python3 -m twine upload dist/pycolonies-1.0.15-py3-none-any.whl 
