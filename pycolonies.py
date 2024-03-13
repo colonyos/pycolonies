@@ -31,7 +31,7 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
     
-def func_spec(func, args, colonyname, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None, fs=None):
+def func_spec(func, args, colonyname, executortype, executorname=None, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None, fs=None):
     if isinstance(func, str):
         func_spec = {
             "nodename": func,
@@ -84,6 +84,9 @@ def func_spec(func, args, colonyname, executortype, priority=1, maxexectime=-1, 
                 "code": code_base64,
             },
         }
+
+    if executorname is not None:
+            func_spec["conditions"]["executorname"] = executorname
 
     return func_spec
 
