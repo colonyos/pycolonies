@@ -390,6 +390,26 @@ class TestColonies(unittest.TestCase):
         self.assertEqual(hello, "hello\n")
 
         self.colonies.del_colony(colonyname, self.server_prv)
+    
+    def test_get_files(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(colonyname, colony_prvkey)
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        
+        testdir = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir)
+        os.system("echo hello > " + testdir + "/hello.txt")
+
+        self.colonies.sync(testdir, "/test", False, colonyname, executor_prvkey)
+
+        testdir2 = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir2)
+        self.colonies.sync(testdir2, "/test", False, colonyname, executor_prvkey)
+
+        files = self.colonies.get_files("/test", colonyname, executor_prvkey)
+        assert(len(files) == 1)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
 
 if __name__ == '__main__':
     unittest.main()

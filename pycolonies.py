@@ -483,3 +483,11 @@ class Colonies:
         res = c_lib.sync(c_host, c_port, c_insecure, c_skip_tls_verify, c_dir, c_label, c_keeplocal, c_colonyname, c_prvkey)
         if res != 0:
             raise Exception("failed to sync")
+
+    def get_files(self, label, colonyname, prvkey):
+        msg = {
+            "msgtype": "getfilesmsg",
+            "colonyname": colonyname,
+            "label": label
+        }
+        return self.__rpc(msg, prvkey)
