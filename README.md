@@ -66,18 +66,20 @@ INFO[0000] Process submitted                             ProcessID=ea398af346db8
 
 Or using the Python SDK.
 ```python
-func_spec = create_func_spec(func=sum_nums, 
-                             args=["helloworld"], 
-                             colonyname=colonyname, 
-                             executortype="echo_executor",
-                             priority=0,
-                             maxexectime=10,
-                             maxretries=3,
-                             maxwaittime=100)
+spec = func_spec(
+            func=sum_nums, 
+            args=["helloworld"], 
+            colonyname=colonyname, 
+            executortype="echo_executor",
+            priority=0,
+            maxexectime=10,
+            maxretries=3,
+            maxwaittime=100
+        )
 
-process = colonies.submit(func_spec, executor_prvkey)
+process = colonies.submit(spec, executor_prvkey)
 ```
-See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/echo.py) for a full example. 
+See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/submit_echo.py) for a full example. 
 
 Now it possible to look up the process using the Colonies CLI.
 ```console
@@ -243,16 +245,18 @@ We can now create a distributed Python application where parts of the code runs 
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2
 
-func_spec = create_func_spec(func=sum_nums, 
-                             args=[1, 2], 
-                             colonyname=colonyname, 
-                             executortype="python_executor",
-                             priority=200,
-                             maxexectime=100,
-                             maxretries=3,
-                             maxwaittime=100)
+spec = func_spec(
+            func=sum_nums, 
+            args=[1, 2], 
+            colonyname=colonyname, 
+            executortype="python_executor",
+            priority=200,
+            maxexectime=100,
+            maxretries=3,
+            maxwaittime=100
+        )
 
-submitted_process = colonies.submit(func_spec, executor_prvkey)
+submitted_process = colonies.submit(spec, executor_prvkey)
 completed_process = colonies.wait(submitted_process, 100, executor_prvkey)
 ```
 
@@ -307,17 +311,21 @@ def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
 wf = Workflow(colonyname)
-func_spec = create_func_spec(func=gen_nums, 
-                             args=[], 
-                             colonyname=colonyname, 
-                             executortype="python_executor")
-wf.add(func_spec, nodename="gen_nums", dependencies=[])
+spec = func_spec(
+            func=gen_nums, 
+            args=[], 
+            colonyname=colonyname, 
+            executortype="python_executor"
+        )
+wf.add(spec, nodename="gen_nums", dependencies=[])
 
-func_spec = create_func_spec(func=sum_nums, 
-                             args=[], 
-                             colonyname=colonyname, 
-                             executortype="python_executor")
-wf.add(func_spec, nodename="sum_nums", dependencies=["gen_nums"])
+spec = func_spec(
+            func=sum_nums, 
+            args=[], 
+            colonyname=colonyname, 
+            executortype="python_executor"
+        )
+wf.add(spec, nodename="sum_nums", dependencies=["gen_nums"])
 
 processgraph = colonies.submit(wf, executor_prvkey)
 ```
@@ -343,18 +351,20 @@ def map(ctx={}):
 
     insert = True
     for i in range(5):
-        func_spec = create_func_spec(func="gen_nums", 
-                                     args=[], 
-                                     colonyname=ctx["colonyname"], 
-                                     executortype="python_executor",
-                                     priority=200,
-                                     maxexectime=100,
-                                     maxretries=3,
-                                     maxwaittime=100,
-                                     code=code)
+        spec = func_spec(
+                    func="gen_nums", 
+                    args=[], 
+                    colonyname=ctx["colonyname"], 
+                    executortype="python_executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100,
+                    code=code
+                )
 
 
-        colonies.add_child(processgraphid, map_processid, reduce_processid, func_spec, "gen_nums_" + str(i), insert, executor_prvkey)
+        colonies.add_child(processgraphid, map_processid, reduce_processid, spec, "gen_nums_" + str(i), insert, executor_prvkey)
         insert = False
 ```
 
@@ -372,17 +382,21 @@ We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_n
 
 ```python
 wf = Workflow(colonyname)
-func_spec = create_func_spec(func=map, 
-                             args=[], 
-                             colonyname=colonyname, 
-                             executortype="python_executor")
-wf.add(func_spec, nodename="map", dependencies=[])
+spec = func_spec(
+            func=map, 
+            args=[], 
+            colonyname=colonyname, 
+            executortype="python_executor"
+        )
+wf.add(spec, nodename="map", dependencies=[])
 
-func_spec = create_func_spec(func=reduce, 
-                             args=[], 
-                             colonyname=colonyname, 
-                             executortype="python_executor")
-wf.add(func_spec, nodename="reduce", dependencies=["map"])
+spec = func_spec(
+            func=reduce, 
+            args=[], 
+            colonyname=colonyname, 
+            executortype="python_executor"
+        )
+wf.add(spec, nodename="reduce", dependencies=["map"])
 
 processgraph = colonies.submit(wf, executor_prvkey)
 ```
