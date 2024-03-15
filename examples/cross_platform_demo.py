@@ -18,7 +18,7 @@ def gen_sleep(executorname):
     return {
     "conditions": {
         "executortype": "container-executor",
-        "executorname": [
+        "executornames": [
             executorname
         ],
         "nodes": 1,
