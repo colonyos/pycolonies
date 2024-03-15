@@ -14,10 +14,13 @@ from pycolonies import Workflow
 
 colonies, colonyname, colony_prvkey, executorid, executor_prvkey = colonies_client()
 
-def gen_sleep(executortype):
+def gen_sleep(executorname):
     return {
     "conditions": {
-        "executortype": executortype,
+        "executortype": "container-executor",
+        "executorname": [
+            executorname
+        ],
         "nodes": 1,
         "processes-per-node": 1,
         "mem": "500Mi",
@@ -38,16 +41,16 @@ def gen_sleep(executortype):
 
 
 wf = Workflow(colonyname)
-wf.add(gen_sleep("ice-kubeexecutor"), nodename="ice-0", dependencies=[])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-0", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-1", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-2", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-3", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-4", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-5", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-6", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="lumi-7", dependencies=["ice-0"])
-wf.add(gen_sleep("lumi-small-hpcexecutor"), nodename="leonardo-0", dependencies=["lumi-0", "lumi-1", "lumi-2", "lumi-3", "lumi-4", "lumi-5", "lumi-6", "lumi-7"])
+wf.add(gen_sleep("icekube"), nodename="ice-0", dependencies=[])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-0", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-1", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-2", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-3", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-4", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-5", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std"), nodename="lumi-6", dependencies=["ice-0"])
+wf.add(gen_sleep("lumi-std "), nodename="lumi-7", dependencies=["ice-0"])
+wf.add(gen_sleep("leonardo-booster"), nodename="leonardo-0", dependencies=["lumi-0", "lumi-1", "lumi-2", "lumi-3", "lumi-4", "lumi-5", "lumi-6", "lumi-7"])
 
-wf.add(gen_sleep("ice-kubeexecutor"), nodename="ice-1", dependencies=["leonardo-0"])
+wf.add(gen_sleep("icekube"), nodename="ice-1", dependencies=["leonardo-0"])
 colonies.submit(wf, executor_prvkey)
