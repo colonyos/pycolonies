@@ -19,4 +19,4 @@ f = func_spec(func="test",
 process = colonies.submit(f, prvkey)
 print("Process", process["processid"], "submitted")
 process = colonies.wait(process, 100, prvkey)
-print(process["out"][0])
+print(process.output[0])

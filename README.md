@@ -230,13 +230,13 @@ The executor can now obtain the code, inject it, and then execute the specified 
 ```python
 assigned_process = colonies.assign(colonyname, 10, executor_prvkey)
 
-code_base64 = assigned_process["spec"]["env"]["code"]
+code_base64 = assigned_process.spec.env["code"]
 code_bytes2 = base64.b64decode(code_base64)
 code = code_bytes2.decode("ascii")
 
 exec(code)
 res = eval(funcname)(*tuple(args))
-colonies.close(assigned_process["processid"], [res], executor_prvkey)
+colonies.close(assigned_process.processid, [res], executor_prvkey)
 ```
 
 We can now create a distributed Python application where parts of the code runs on a remote executor.

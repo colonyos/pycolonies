@@ -2,6 +2,7 @@ import requests
 import json 
 import sys
 sys.path.append(".")
+from model import Process, Spec, Workflow, ProcessGraph
 from crypto import Crypto
 import base64
 from websocket import create_connection
@@ -90,22 +91,6 @@ def func_spec(func, args, colonyname, executortype, executorname=None, priority=
 
     return func_spec
 
-class Workflow:
-    def __init__(self, colonyname):
-        self.colonyname = colonyname
-        self.func_specs = []
-
-    def add(self, func_spec, nodename, dependencies):
-        func_spec["nodename"] = nodename
-        func_spec["conditions"]["dependencies"] = dependencies
-        self.func_specs.append(func_spec)
-
-    def workflow_spec(self):
-        return { 
-                "colonyname" : self.colonyname,
-                "functionspecs" : self.func_specs
-                }
-
 class Colonies:
     WAITING = 0
     RUNNING = 1
@@ -152,16 +137,14 @@ class Colonies:
         else:
             raise ColoniesError(payload["message"])
     
-    def wait(self, process, timeout, prvkey):
-        processid = process["processid"]
-        executortype = process["spec"]["conditions"]["executortype"]
+    def wait(self, process: Process, timeout, prvkey) -> Process:
         state = 2
         msg = {
-            "processid": processid,
-            "executortype": executortype,
+            "processid": process.processid,
+            "executortype": process.spec.conditions.executortype,
             "state": state,
             "timeout": timeout,
-            "colonyname": process["spec"]["conditions"]["colonyname"],
+            "colonyname": process.spec.conditions.colonyname,
             "msgtype": "subscribeprocessmsg"
         }
 
@@ -183,7 +166,7 @@ class Colonies:
         ws.recv()
         ws.close()
 
-        return self.get_process(process["processid"], prvkey)
+        return self.get_process(process.processid, prvkey)
 
     def add_colony(self, colony, prvkey):
         msg = {
@@ -249,28 +232,31 @@ class Colonies:
             "executorname": executorname
         }
         return self.__rpc(msg, prvkey)
-    
-    def submit(self, spec, prvkey):
-        if isinstance(spec, Workflow):
-            msg = {
-                "msgtype": "submitworkflowspecmsg",
-                "spec": spec.workflow_spec()
-            }
-            return self.__rpc(msg, prvkey)
-        else:
-            msg = {
+                
+    def submit_func_spec(self, spec: Spec, prvkey) -> Process:
+        msg = {
                 "msgtype": "submitfuncspecmsg",
-                "spec": spec
+                "spec": spec.model_dump()
             }
-            return self.__rpc(msg, prvkey)
+        response = self.__rpc(msg, prvkey)
+        return Process(**response)
     
-    def assign(self, colonyname, timeout, prvkey):
+    def submit_workflow(self, workflow: Workflow, prvkey) -> ProcessGraph:
+        msg = {
+                "msgtype": "submitworkflowspecmsg",
+                "spec": workflow.model_dump()
+            }
+        response = self.__rpc(msg, prvkey)
+        return ProcessGraph(**response)
+
+    def assign(self, colonyname, timeout, prvkey) -> Process:
         msg = {
             "msgtype": "assignprocessmsg",
             "timeout": timeout,
             "colonyname": colonyname
         }
-        return self.__rpc(msg, prvkey)
+        response = self.__rpc(msg, prvkey)
+        return Process(**response)
   
     def list_processes(self, colonyname, count, state, prvkey):
         msg = {
@@ -281,12 +267,13 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def get_process(self, processid, prvkey):
+    def get_process(self, processid, prvkey) -> Process:
         msg = {
             "msgtype": "getprocessmsg",
             "processid": processid
         }
-        return self.__rpc(msg, prvkey)
+        response = self.__rpc(msg, prvkey)
+        return Process(**response)
     
     def remove_process(self, processid, prvkey):
         msg = {

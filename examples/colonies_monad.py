@@ -54,6 +54,6 @@ class ColoniesMonad:
         last_process = self.colonies.find_process(self.prev_func, processgraph["processids"], self.executor_prvkey)
         process = self.colonies.wait(last_process, 100, self.executor_prvkey)
 
-        if len(process["out"])>0:
-            return process["out"][0]
+        if len(process.output)>0:
+            return process.output[0]
         return ""
