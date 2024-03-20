@@ -32,7 +32,7 @@ class Fs(BaseModel):
     dirs: List[str] | None
 
 
-class Spec(BaseModel):
+class FuncSpec(BaseModel):
     nodename: str = ""
     funcname: str = ""
     args: List[str] = []
@@ -43,7 +43,7 @@ class Spec(BaseModel):
     maxretries: int = 0
     conditions: Conditions
     label: str = ""
-    fs: Fs = Fs(mount="", snapshots=None, dirs=None)
+    fs: Fs | None = Fs(mount="", snapshots=None, dirs=None)
     env: Dict[str, str] = {}
 
 class Attribute(BaseModel):
@@ -67,7 +67,7 @@ class Process(BaseModel):
     execdeadline: datetime
     retries: int
     attributes: List[Attribute] | None
-    spec: Spec
+    spec: FuncSpec
     waitforparents: bool = False
     parents: List[str]
     children: List[str]
@@ -79,7 +79,7 @@ class Process(BaseModel):
 
 class Workflow(BaseModel):
     colonyname: str
-    functionspecs: List[Spec]
+    functionspecs: List[FuncSpec]
 
 
 class ProcessGraph(BaseModel):

@@ -2,7 +2,7 @@ import requests
 import json 
 import sys
 sys.path.append(".")
-from model import Process, Spec, Workflow, ProcessGraph
+from model import Process, FuncSpec, Workflow, ProcessGraph, Conditions
 from crypto import Crypto
 import base64
 from websocket import create_connection
@@ -34,28 +34,26 @@ class ColoniesError(Exception):
     
 def func_spec(func, args, colonyname, executortype, executorname=None, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None, fs=None):
     if isinstance(func, str):
-        func_spec = {
-            "nodename": func,
-            "funcname": func, 
-            "args": args,
-            "kwargs": kwargs,
-            "fs": fs,
-            "priority": priority,
-            "maxwaittime": maxwaittime,
-            "maxexectime": maxexectime,
-            "maxretries": maxretries,
-            "conditions": {
-                "colonyname": colonyname,
-                "executortype": executortype
-            },
-            "label": ""
-        }
+        func_spec = FuncSpec(
+            nodename=func,
+            funcname=func, 
+            args=args,
+            kwargs=kwargs,
+            fs=fs,
+            priority=priority,
+            maxwaittime=maxwaittime,
+            maxexectime=maxexectime,
+            maxretries=maxretries,
+            conditions= Conditions(
+                colonyname=colonyname,
+                executortype=executortype
+            )
+        )
         if code is not None:
             code_bytes = code.encode("ascii")
             code_base64_bytes = base64.b64encode(code_bytes)
             code_base64 = code_base64_bytes.decode("ascii")
-            func_spec["env"] = {}
-            func_spec["env"]["code"] = code_base64
+            func_spec.env["code"] = code_base64
 
     else:
         code = inspect.getsource(func)
@@ -67,27 +65,27 @@ def func_spec(func, args, colonyname, executortype, executorname=None, priority=
         args_spec = inspect.getfullargspec(func)
         args_spec_str = ','.join(args_spec.args)
 
-        func_spec = {
-            "nodename": funcname,
-            "funcname": funcname,
-            "args": args,
-            "kwargs": kwargs,
-            "priority": priority,
-            "maxwaittime": maxwaittime,
-            "maxexectime": maxexectime,
-            "maxretries": maxretries,
-            "conditions": {
-                "colonyname": colonyname,
-                "executortype": executortype
-            },
-            "env": {
+        func_spec = FuncSpec(
+            nodename=funcname,
+            funcname=funcname,
+            args=args,
+            kwargs=kwargs,
+            priority=priority,
+            maxwaittime=maxwaittime,
+            maxexectime=maxexectime,
+            maxretries=maxretries,
+            conditions=Conditions(
+                colonyname=colonyname,
+                executortype=executortype
+            ),
+            env={
                 "args_spec": args_spec_str,
                 "code": code_base64,
-            },
-        }
+            }
+        )
 
     if executorname is not None:
-            func_spec["conditions"]["executorname"] = executorname
+            func_spec.conditions.executornames = [ executorname ]
 
     return func_spec
 
@@ -233,7 +231,7 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
                 
-    def submit_func_spec(self, spec: Spec, prvkey) -> Process:
+    def submit_func_spec(self, spec: FuncSpec, prvkey) -> Process:
         msg = {
                 "msgtype": "submitfuncspecmsg",
                 "spec": spec.model_dump()

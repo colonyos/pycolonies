@@ -6,7 +6,7 @@ import random
 sys.path.append(".")
 from crypto import Crypto
 from pycolonies import Colonies
-from model import Spec, Conditions, Workflow
+from model import FuncSpec, Conditions, Workflow
 import os
 
 
@@ -52,7 +52,7 @@ class TestColonies(unittest.TestCase):
         )
 
     def submit_test_funcspec(self, colonyname, executor_prvkey):
-        spec = Spec(
+        spec = FuncSpec(
             conditions=Conditions(
                 colonyname=colonyname, executortype="test-executor-type"
             ),
@@ -166,7 +166,7 @@ class TestColonies(unittest.TestCase):
         workflow = Workflow(
             colonyname=colonyname,
             functionspecs=[
-                Spec(
+                FuncSpec(
                     nodename="node1",
                     conditions=Conditions(
                         colonyname=colonyname, executortype="test-executor-type"
@@ -175,7 +175,7 @@ class TestColonies(unittest.TestCase):
                     maxexectime=-1,
                     maxretries=3,
                 ),
-                Spec(
+                FuncSpec(
                     nodename="node2",
                     conditions=Conditions(
                         colonyname=colonyname,
@@ -476,7 +476,7 @@ class TestColonies(unittest.TestCase):
         )
         self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
 
-        func_spec = Spec(
+        func_spec = FuncSpec(
             conditions=Conditions(
                 colonyname=colonyname, executortype="test-executor-type"
             ),
