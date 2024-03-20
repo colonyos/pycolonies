@@ -47,17 +47,17 @@ class PythonExecutor:
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
-                print("Process", process["processid"], "is assigned to executor")
-                if process["spec"]["funcname"] == "echo":
+                print("Process", process.processid, "is assigned to executor")
+                if process.spec.funcname == "echo":
                     # if "in" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
-                    if len(process["in"])>0:
-                        args = process["in"]
+                    if len(process.input)>0:
+                        args = process.input
                     else:
-                        args = process["spec"]["args"]
+                        args = process.spec.args
 
                     # just set output to input value 
-                    self.colonies.close(process["processid"], [args[0]], self.executor_prvkey)
+                    self.colonies.close(process.processid, [args[0]], self.executor_prvkey)
             except Exception as err:
                 print(err)
                 pass
