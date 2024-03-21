@@ -371,7 +371,7 @@ class Colonies:
     def find_process(self, nodename, processids, prvkey):
         for processid in processids:
             process = self.get_process(processid, prvkey)
-            if process["spec"]["nodename"] == nodename:
+            if process.spec.nodename == nodename:
                 return process
         return None
     

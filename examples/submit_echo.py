@@ -12,7 +12,8 @@ f = func_spec(func="echo",
               maxretries=3,
               maxwaittime=100)
 
-process = colonies.submit(f, prvkey)
-print("Process", process["processid"], "submitted")
+process = colonies.submit_func_spec(f, prvkey)
+print("Process", process.processid, "submitted")
 process = colonies.wait(process, 100, prvkey)
 print(process.output[0])
+
