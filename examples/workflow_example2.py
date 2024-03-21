@@ -13,7 +13,7 @@ def reduce(*nums, ctx={}):
         total += n
     return total 
 
-wf = Workflow(colonyname)
+wf = Workflow(colonyname=colonyname)
 f = func_spec(func=gen_nums, 
               args=[], 
               colonyname=colonyname, 
@@ -22,7 +22,9 @@ f = func_spec(func=gen_nums,
               maxexectime=100,
               maxretries=3,
               maxwaittime=100)
-wf.add(f, nodename="gen_nums1", dependencies=[])
+
+f.nodename = "gen_nums1"
+wf.functionspecs.append(f)
 
 f = func_spec(func=gen_nums, 
               args=[], 
@@ -32,7 +34,9 @@ f = func_spec(func=gen_nums,
               maxexectime=100,
               maxretries=3,
               maxwaittime=100)
-wf.add(f, nodename="gen_nums2", dependencies=[])
+
+f.nodename = "gen_nums2"
+wf.functionspecs.append(f)
 
 func_spec = func_spec(func=reduce, 
                              args=[], 
@@ -42,12 +46,14 @@ func_spec = func_spec(func=reduce,
                              maxexectime=100,
                              maxretries=3,
                              maxwaittime=100) 
-wf.add(func_spec, nodename="reduce", dependencies=["gen_nums1", "gen_nums2"])
 
-processgraph = colonies.submit(wf, prvkey)
-print("Workflow", processgraph["processgraphid"], "submitted")
+func_spec.conditions.dependencies = ["gen_nums1", "gen_nums2"]
+wf.functionspecs.append(func_spec)
+
+processgraph = colonies.submit_workflow(wf, prvkey)
+print("Workflow", processgraph.processgraphid, "submitted")
 
 # wait for the sum_list process
-process = colonies.find_process("reduce", processgraph["processids"], prvkey)
+process = colonies.find_process("reduce", processgraph.processids, prvkey)
 process = colonies.wait(process, 100, prvkey)
 print(process.output[0])

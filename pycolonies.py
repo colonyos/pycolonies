@@ -376,15 +376,15 @@ class Colonies:
                 return process
         return None
     
-    def add_child(self, processgraphid, parentprocessid, childprocessid, funcspec, nodename, insert, prvkey):
-        funcspec["nodename"] = nodename
+    def add_child(self, processgraphid, parentprocessid, childprocessid, funcspec: FuncSpec, nodename, insert, prvkey):
+        funcspec.nodename = nodename
         msg = {
             "msgtype": "addchildmsg",
             "processgraphid": processgraphid,
             "parentprocessid": parentprocessid,
             "childprocessid": childprocessid,
             "insert": insert,
-            "spec": funcspec
+            "spec": funcspec.model_dump()
         }
         return self.__rpc(msg, prvkey)
     

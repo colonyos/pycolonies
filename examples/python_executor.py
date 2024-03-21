@@ -71,7 +71,7 @@ class PythonExecutor:
                 try:
                     # if "in" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
-                    print(assigned_process.model_dump_json())
+                    
                     if assigned_process.input is not None and len(assigned_process.input)>0:
                         args = assigned_process.input
                     else:

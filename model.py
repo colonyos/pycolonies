@@ -81,6 +81,22 @@ class Workflow(BaseModel):
     colonyname: str
     functionspecs: List[FuncSpec] = []
 
+class Position(BaseModel):
+    x: int
+    y: int
+
+class ProcessNode(BaseModel):
+    id: str
+    data: Dict[str, str] = {}
+    position: Position
+    type: str
+    style: Dict[str, str] = {}
+
+class ProcessEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    animated: bool
 
 class ProcessGraph(BaseModel):
     processgraphid: str
@@ -93,6 +109,6 @@ class ProcessGraph(BaseModel):
     starttime: datetime
     endtime: datetime
     processids: List[str]
-    # TODO: set proper types for these
-    nodes: List[str]
-    edges: List[str]
+    nodes: List[ProcessNode]
+    edges: List[ProcessEdge]
+
