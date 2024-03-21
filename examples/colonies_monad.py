@@ -2,6 +2,8 @@ from pycolonies import Colonies
 from pycolonies import Workflow
 from pycolonies import func_spec 
 
+import copy
+
 class Function:
     def __init__(self,
                  func,
@@ -44,9 +46,9 @@ class ColoniesMonad:
             self.wf.functionspecs.append(f.func_spec)
             self.prev_func = f.name
         else:
-            # HAX
-            f.func_spec.conditions.dependencies = [self.prev_func]
-            self.wf.functionspecs.append(f.func_spec)
+            fs = copy.deepcopy(f.func_spec)
+            fs.conditions.dependencies = [self.prev_func]
+            self.wf.functionspecs.append(fs)
             self.prev_func = f.name
         
         return self
