@@ -12,7 +12,7 @@ class Gpu(BaseModel):
 
 
 class Conditions(BaseModel):
-    colonyname: str
+    colonyname: str = ""
     executornames: List[str] | None = None
     executortype: str
     dependencies: List[str] = []
@@ -35,7 +35,7 @@ class Fs(BaseModel):
 class FuncSpec(BaseModel):
     nodename: str = ""
     funcname: str = ""
-    args: List[str] = []
+    args: List[str | int] = []
     kwargs: Dict[str, str] | None = {}
     priority: int = 0
     maxwaittime: int = 0
@@ -72,14 +72,14 @@ class Process(BaseModel):
     parents: List[str]
     children: List[str]
     processgraphid: str
-    input: List[str] = Field(alias="in")
-    output: List[str] = Field(alias="out")
+    input: List[str | int] = Field(alias="in")
+    output: List[str | int] = Field(alias="out")
     errors: List[str]
 
 
 class Workflow(BaseModel):
     colonyname: str
-    functionspecs: List[FuncSpec]
+    functionspecs: List[FuncSpec] = []
 
 
 class ProcessGraph(BaseModel):

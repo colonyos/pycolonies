@@ -339,7 +339,8 @@ class Colonies:
             "msgtype": "getprocessgraphmsg",
             "processgraphid": processgraphid
         }
-        return self.__rpc(msg, prvkey)
+        graph = self.__rpc(msg, prvkey)
+        return ProcessGraph(**graph)
     
     def add_function(self, colonyname, executorname, funcname, prvkey):
         func = {}

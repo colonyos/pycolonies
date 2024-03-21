@@ -34,7 +34,7 @@ def gen_sleep(executorname, nodename, dependencies):
     )
 
 
-wf = Workflow(colonyname)
+wf = Workflow(colonyname=colonyname)
 wf.functionspecs.append(gen_sleep("icekube", nodename="ice-0", dependencies=[]))
 wf.functionspecs.append(gen_sleep("lumi-std", nodename="lumi-0", dependencies=["ice-0"]))
 wf.functionspecs.append(gen_sleep("lumi-std", nodename="lumi-1", dependencies=["ice-0"]))

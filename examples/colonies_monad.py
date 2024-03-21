@@ -30,7 +30,7 @@ class ColoniesMonad:
                  colonies: Colonies, 
                  colonyname, 
                  executor_prvkey): 
-        self.wf = Workflow(colonyname)
+        self.wf = Workflow(colonyname=colonyname)
         self.colonyname = colonyname
         self.executor_prvkey = executor_prvkey
         self.prev_func = None
@@ -39,12 +39,14 @@ class ColoniesMonad:
     def __ror__(self, other):
         pass
 
-    def __rshift__(self, f):  # bind function
+    def __rshift__(self, f: Function):  # bind function
         if self.prev_func is None:
-            self.wf.functionspecs.append(f.func_spec, nodename=f.name, dependencies=[])
+            self.wf.functionspecs.append(f.func_spec)
             self.prev_func = f.name
         else:
-            self.wf.functionspecs.append(f.func_spec, nodename=f.name, dependencies=[self.prev_func])
+            # HAX
+            f.func_spec.conditions.dependencies = [self.prev_func]
+            self.wf.functionspecs.append(f.func_spec)
             self.prev_func = f.name
         
         return self
