@@ -77,7 +77,7 @@ spec = func_spec(
             maxwaittime=100
         )
 
-process = colonies.submit(spec, executor_prvkey)
+process = colonies.submit_func_spec(spec, executor_prvkey)
 ```
 See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/submit_echo.py) for a full example. 
 
@@ -179,9 +179,9 @@ The next step is to connect the Colonies server and get process assignments. Not
 
 ```python
 process = colonies.assign(colonyname, 10, executor_prvkey)
-if process["spec"]["funcname"] == "echo":
-    assigned_args = process["spec"]["args"]
-    colonies.close(process["processid"], [arg], executor_prvkey)
+if process.spec.funcname == "echo":
+    assigned_args = process.spec.args
+    colonies.close(process.processid, [arg], executor_prvkey)
 ```
 
 The *close* method sets the output (same the args in this case) and the process state to *successful*. Only the Executor assigned to a process may alter process information stored on the Colonies server. By setting the *maxexectime* attribute on the function spec, it is possible to specify how long an executor may run a process before it is released back the waiting queue at the Colonies server. This is a very useful feature to implement robust processing pipelines.
@@ -256,7 +256,7 @@ spec = func_spec(
             maxwaittime=100
         )
 
-submitted_process = colonies.submit(spec, executor_prvkey)
+submitted_process = colonies.submit_func_spec(spec, executor_prvkey)
 completed_process = colonies.wait(submitted_process, 100, executor_prvkey)
 ```
 
@@ -310,24 +310,32 @@ def gen_nums(ctx={}):
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
-wf = Workflow(colonyname)
-spec = func_spec(
-            func=gen_nums, 
-            args=[], 
-            colonyname=colonyname, 
-            executortype="python_executor"
-        )
-wf.add(spec, nodename="gen_nums", dependencies=[])
+wf = Workflow(colonyname=colonyname)
+f = func_spec(func=gen_nums,
+              args=[], 
+              colonyname=colonyname, 
+              executortype="python-executor",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
 
-spec = func_spec(
-            func=sum_nums, 
-            args=[], 
-            colonyname=colonyname, 
-            executortype="python_executor"
-        )
-wf.add(spec, nodename="sum_nums", dependencies=["gen_nums"])
+wf.functionspecs.append(f)
 
-processgraph = colonies.submit(wf, executor_prvkey)
+f = func_spec(func=sum_nums, 
+              args=[], 
+              colonyname=colonyname, 
+              executortype="python-executor",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
+
+f.conditions.dependencies.append("gen_nums")
+
+wf.functionspecs.append(f)
+
+processgraph = colonies.submit_workflow(wf, prvkey)
 ```
 
 ## Dynamic processgraphs
@@ -339,32 +347,30 @@ The `map()` function below dynamically adds 5 `gen_nums()` functions to the proc
 def map(ctx={}):
     code = """def gen_nums(ctx={}):
                 return 1, 2""" 
-  
-    processgraphid = ctx["process"]["processgraphid"]
-    map_processid = ctx["process"]["processid"]
+    processgraphid = ctx["process"].processgraphid
+    map_processid = ctx["process"].processid
     executor_prvkey = ctx["executor_prvkey"]
   
     processgraph = colonies.get_processgraph(processgraphid, executor_prvkey)
-    print(processgraph)
-    reduce_process = colonies.find_process("reduce", processgraph["processids"], executor_prvkey)
-    reduce_processid = reduce_process["processid"]
+
+    reduce_process = colonies.find_process("reduce", processgraph.processids, executor_prvkey)
+    reduce_processid = reduce_process.processid
 
     insert = True
-    for i in range(5):
-        spec = func_spec(
-                    func="gen_nums", 
-                    args=[], 
-                    colonyname=ctx["colonyname"], 
-                    executortype="python_executor",
-                    priority=200,
-                    maxexectime=100,
-                    maxretries=3,
-                    maxwaittime=100,
-                    code=code
-                )
+    for i in range(1):
+        f = func_spec(func="gen_nums", 
+                      args=[], 
+                      colonyname=ctx["colonyname"], 
+                      executortype="python-executor",
+                      priority=200,
+                      maxexectime=100,
+                      maxretries=3,
+                      maxwaittime=100,
+                      code=code)
 
 
-        colonies.add_child(processgraphid, map_processid, reduce_processid, spec, "gen_nums_" + str(i), insert, executor_prvkey)
+        colonies.add_child(processgraphid, map_processid, reduce_processid, f, "gen_nums_" + str(i), insert, executor_prvkey)
+
         insert = False
 ```
 
@@ -381,24 +387,32 @@ def reduce(*nums, ctx={}):
 We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_nums(), gen_nums(), gen_nums())`. The result should be (1+2)*5=15.
 
 ```python
-wf = Workflow(colonyname)
-spec = func_spec(
-            func=map, 
-            args=[], 
-            colonyname=colonyname, 
-            executortype="python_executor"
-        )
-wf.add(spec, nodename="map", dependencies=[])
+wf = Workflow(colonyname=colonyname)
 
-spec = func_spec(
-            func=reduce, 
-            args=[], 
-            colonyname=colonyname, 
-            executortype="python_executor"
-        )
-wf.add(spec, nodename="reduce", dependencies=["map"])
+f = func_spec(func=map, 
+              args=[], 
+              colonyname=colonyname, 
+              executortype="python-executor",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
 
-processgraph = colonies.submit(wf, executor_prvkey)
+wf.functionspecs.append(f)
+
+f = func_spec(func=reduce, 
+              args=[], 
+              colonyname=colonyname, 
+              executortype="python-executor",
+              priority=200,
+              maxexectime=100,
+              maxretries=3,
+              maxwaittime=100)
+
+f.conditions.dependencies.append("map")
+wf.functionspecs.append(f)
+
+processgraph = colonies.submit_workflow(wf, prvkey)
 ```
 
 ![MapReduce example](docs/images/mapreduce.png)
