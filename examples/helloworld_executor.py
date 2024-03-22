@@ -44,10 +44,10 @@ class PythonExecutor:
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
-                print("Process", process["processid"], "is assigned to executor")
-                self.colonies.add_log(process["processid"], "Hello from executor\n", self.executor_prvkey)
-                if process["spec"]["funcname"] == "helloworld":
-                    self.colonies.close(process["processid"], ["helloworld"], self.executor_prvkey)
+                print("Process", process.processid, "is assigned to executor")
+                self.colonies.add_log(process.processid, "Hello from executor\n", self.executor_prvkey)
+                if process.spec.funcname == "helloworld":
+                    self.colonies.close(process.processid, ["helloworld"], self.executor_prvkey)
             except Exception as err:
                 print(err)
                 pass

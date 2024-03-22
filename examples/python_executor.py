@@ -47,10 +47,10 @@ class PythonExecutor:
                 # an exception will be raised if no processes can be assigned, and we will restart start the while loop
                 assigned_process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
                 print()
-                print("Process", assigned_process["processid"], "is assigned to Executor")
+                print("Process", assigned_process.processid, "is assigned to Executor")
 
                 # ok, executor was assigned a process, extract the function code to run
-                code_base64 = assigned_process["spec"]["env"]["code"]
+                code_base64 = assigned_process.spec.env["code"]
                 code_bytes2 = base64.b64decode(code_base64)
                 code = code_bytes2.decode("ascii")
 
@@ -58,8 +58,8 @@ class PythonExecutor:
                 exec(code)
 
                 # extract args and call the function code we just injected
-                funcspec = assigned_process["spec"]
-                funcname = funcspec["funcname"]
+                funcspec = assigned_process.spec
+                funcname = funcspec.funcname
                 try:
                     self.colonies.add_function(self.colonyname, 
                                              self.executorname, 
@@ -71,14 +71,15 @@ class PythonExecutor:
                 try:
                     # if "in" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
-                    if assigned_process["in"] is not None and len(assigned_process["in"])>0:
-                        args = assigned_process["in"] 
+                    
+                    if assigned_process.input is not None and len(assigned_process.input)>0:
+                        args = assigned_process.input
                     else:
-                        args = funcspec["args"]
+                        args = funcspec.args
                 except Exception as err:
                     print(err)
 
-                print("Executing:", funcspec["funcname"])
+                print("Executing:", funcspec.funcname)
 
                 # call the injected function
                 try:
@@ -86,8 +87,9 @@ class PythonExecutor:
                            "colonyname": self.colonyname,
                            "executorid": self.executorid,
                            "executor_prvkey": self.executor_prvkey}
-  
+                      
                     res = eval(funcname)(*tuple(args), ctx=ctx)
+
                     if res is not None:
                         if type(res) is tuple:
                             res_arr = list(res)
@@ -97,13 +99,12 @@ class PythonExecutor:
                         res_arr = []
                 except Exception as err:
                     print("Failed to execute function:", err)
-                    print(code)
-                    self.colonies.fail(assigned_process["processid"], ["Failed to execute function"], self.executor_prvkey)
+                    self.colonies.fail(assigned_process.processid, ["Failed to execute function"], self.executor_prvkey)
                     continue
 
                 print("done")
                 # close the process as successful
-                self.colonies.close(assigned_process["processid"], res_arr, self.executor_prvkey)
+                self.colonies.close(assigned_process.processid, res_arr, self.executor_prvkey)
             except ColoniesConnectionError as err:
                 print(err)
                 sys.exit(-1)

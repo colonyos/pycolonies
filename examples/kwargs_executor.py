@@ -38,13 +38,13 @@ class PythonExecutor:
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
-                print("Process", process["processid"], "is assigned to executor")
-                if process["spec"]["funcname"] == "test":
-                    kwargs = process["spec"]["kwargs"]
+                print("Process", process.processid, "is assigned to executor")
+                if process.spec.funcname == "test":
+                    kwargs = process.spec.kwargs
                     print(kwargs["arg_kw_1"])
 
                     # just set output to input value 
-                    self.colonies.close(process["processid"], [""], self.executor_prvkey)
+                    self.colonies.close(process.processid, [""], self.executor_prvkey)
             except Exception as err:
                 print(err)
                 pass

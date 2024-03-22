@@ -10,3 +10,4 @@ __credits__ = 'ri.se'
 
 import crypto
 import cfs
+import model

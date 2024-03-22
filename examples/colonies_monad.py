@@ -2,6 +2,8 @@ from pycolonies import Colonies
 from pycolonies import Workflow
 from pycolonies import func_spec 
 
+import copy
+
 class Function:
     def __init__(self,
                  func,
@@ -27,10 +29,10 @@ class Function:
 
 class ColoniesMonad:
     def __init__(self, 
-                 colonies, 
+                 colonies: Colonies, 
                  colonyname, 
                  executor_prvkey): 
-        self.wf = Workflow(colonyname)
+        self.wf = Workflow(colonyname=colonyname)
         self.colonyname = colonyname
         self.executor_prvkey = executor_prvkey
         self.prev_func = None
@@ -39,21 +41,23 @@ class ColoniesMonad:
     def __ror__(self, other):
         pass
 
-    def __rshift__(self, f):  # bind function
+    def __rshift__(self, f: Function):  # bind function
         if self.prev_func is None:
-            self.wf.add(f.func_spec, nodename=f.name, dependencies=[])
+            self.wf.functionspecs.append(f.func_spec)
             self.prev_func = f.name
         else:
-            self.wf.add(f.func_spec, nodename=f.name, dependencies=[self.prev_func])
+            fs = copy.deepcopy(f.func_spec)
+            fs.conditions.dependencies = [self.prev_func]
+            self.wf.functionspecs.append(fs)
             self.prev_func = f.name
         
         return self
 
     def unwrap(self):
-        processgraph = self.colonies.submit(self.wf, self.executor_prvkey)
-        last_process = self.colonies.find_process(self.prev_func, processgraph["processids"], self.executor_prvkey)
+        processgraph = self.colonies.submit_workflow(self.wf, self.executor_prvkey)
+        last_process = self.colonies.find_process(self.prev_func, processgraph.processids, self.executor_prvkey)
         process = self.colonies.wait(last_process, 100, self.executor_prvkey)
 
-        if len(process["out"])>0:
-            return process["out"][0]
+        if len(process.output)>0:
+            return process.output[0]
         return ""

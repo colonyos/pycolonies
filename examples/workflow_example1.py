@@ -10,8 +10,8 @@ def gen_nums(ctx={}):
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
-wf = Workflow(colonyname)
-f = func_spec(func=gen_nums, 
+wf = Workflow(colonyname=colonyname)
+f = func_spec(func=gen_nums,
               args=[], 
               colonyname=colonyname, 
               executortype="python-executor",
@@ -19,7 +19,8 @@ f = func_spec(func=gen_nums,
               maxexectime=100,
               maxretries=3,
               maxwaittime=100)
-wf.add(f, nodename="gen_nums", dependencies=[])
+
+wf.functionspecs.append(f)
 
 f = func_spec(func=sum_nums, 
               args=[], 
@@ -28,13 +29,16 @@ f = func_spec(func=sum_nums,
               priority=200,
               maxexectime=100,
               maxretries=3,
-              maxwaittime=100) 
-wf.add(f, nodename="sum_nums", dependencies=["gen_nums"])
+              maxwaittime=100)
 
-processgraph = colonies.submit(wf, prvkey)
-print("Workflow", processgraph["processgraphid"], "submitted")
+f.conditions.dependencies.append("gen_nums")
+
+wf.functionspecs.append(f)
+
+processgraph = colonies.submit_workflow(wf, prvkey)
+print("Workflow", processgraph.processgraphid, "submitted")
 
 # wait for the sum_list process
-process = colonies.find_process("sum_nums", processgraph["processids"], prvkey)
+process = colonies.find_process("sum_nums", processgraph.processids, prvkey)
 process = colonies.wait(process, 100, prvkey)
-print(process["out"][0])
+print(process.output[0])

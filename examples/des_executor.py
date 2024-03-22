@@ -48,22 +48,22 @@ class PythonExecutor:
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 3, self.executor_prvkey)
-                print("Process", process["processid"], "is assigned to executor")
+                print("Process", process.processid, "is assigned to executor")
                 
-                self.colonies.add_log(process["processid"], "Calculating NDVI\n", self.executor_prvkey)
+                self.colonies.add_log(process.processid, "Calculating NDVI\n", self.executor_prvkey)
 
-                if not ('spec' in process and 'kwargs' in process['spec']):
+                if process.spec is None or len(process.spec.kwargs) == 0:
                     print("invalid process")
                     continue
 
-                polygon = process["spec"]["kwargs"]["polygon"]
-                product = process["spec"]["kwargs"]["product"]
-                time = process["spec"]["kwargs"]["time"]
+                polygon = process.spec.kwargs["polygon"]
+                product = process.spec.kwargs["product"]
+                time = process.spec.kwargs["time"]
 
                 ndvi_serie = calc_ndvi(polygon, product, time)
 
-                if process["spec"]["funcname"] == "calc_ts":
-                    self.colonies.close(process["processid"], ndvi_serie, self.executor_prvkey)
+                if process.spec.funcname == "calc_ts":
+                    self.colonies.close(process.processid, ndvi_serie, self.executor_prvkey)
             except Exception as err:
                 pass 
 
