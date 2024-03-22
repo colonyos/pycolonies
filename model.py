@@ -46,11 +46,13 @@ class FuncSpec(BaseModel):
     fs: Fs | None = Fs(mount="", snapshots=None, dirs=None)
     env: Dict[str, str] = {}
 
+
 class Attribute(BaseModel):
     key: str
     value: str
     targetid: str
     attributetype: int
+
 
 class Process(BaseModel):
     processid: str
@@ -81,9 +83,11 @@ class Workflow(BaseModel):
     colonyname: str
     functionspecs: List[FuncSpec] = []
 
+
 class Position(BaseModel):
     x: int
     y: int
+
 
 class ProcessNode(BaseModel):
     id: str
@@ -92,11 +96,13 @@ class ProcessNode(BaseModel):
     type: str
     style: Dict[str, str] = {}
 
+
 class ProcessEdge(BaseModel):
     id: str
     source: str
     target: str
     animated: bool
+
 
 class ProcessGraph(BaseModel):
     processgraphid: str
@@ -111,4 +117,3 @@ class ProcessGraph(BaseModel):
     processids: List[str]
     nodes: List[ProcessNode]
     edges: List[ProcessEdge]
-
