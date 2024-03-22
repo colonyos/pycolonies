@@ -72,8 +72,8 @@ class Process(BaseModel):
     parents: List[str]
     children: List[str]
     processgraphid: str
-    input: List[str | int] | None = Field(alias="in")
-    output: List[str | int] | None = Field(alias="out")
+    input: List[str | int | float] | None = Field(alias="in")
+    output: List[str | int | float] | None = Field(alias="out")
     errors: List[str]
 
 
