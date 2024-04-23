@@ -16,9 +16,9 @@ func_spec = func_spec(func=sum_nums,
                       maxwaittime=100)
 
 # submit the function spec to the colonies server
-process = colonies.submit(func_spec, prvkey)
-print("Process", process["processid"], "submitted")
+process = colonies.submit_func_spec(func_spec, prvkey)
+print("Process", process.processid, "submitted")
 
 # wait for the process to be executed
 process = colonies.wait(process, 100, prvkey)
-print(process["out"][0])
+print(process.output[0])

@@ -11,7 +11,7 @@ class TestFuncSpec(unittest.TestCase):
             "two": "2"
         }
 
-        fs = func_spec(
+        spec = func_spec(
             func="sum_nums",
             args=["helloworld"],
             colonyname="colonyname",
@@ -24,17 +24,17 @@ class TestFuncSpec(unittest.TestCase):
             kwargs=kwargs
         )
 
-        self.assertEqual(fs["nodename"], "sum_nums")
-        self.assertEqual(fs["funcname"], "sum_nums")
-        self.assertEqual(fs["args"], ["helloworld"])
+        self.assertEqual(spec.nodename, "sum_nums")
+        self.assertEqual(spec.funcname, "sum_nums")
+        self.assertEqual(spec.args, ["helloworld"])
 
-        self.assertEqual(fs["conditions"]["colonyname"], "colonyname")
-        self.assertEqual(fs["conditions"]["executortype"], "echo_executor")
-        self.assertEqual(fs["conditions"]["executorname"], "exec_name")
+        self.assertEqual(spec.conditions.colonyname, "colonyname")
+        self.assertEqual(spec.conditions.executortype, "echo_executor")
+        self.assertEqual(spec.conditions.executornames[0], "exec_name")
 
-        self.assertEqual(fs["priority"], 0)
-        self.assertEqual(fs["maxexectime"], 10)
-        self.assertEqual(fs["maxretries"], 3)
-        self.assertEqual(fs["maxwaittime"], 100)
+        self.assertEqual(spec.priority, 0)
+        self.assertEqual(spec.maxexectime, 10)
+        self.assertEqual(spec.maxretries, 3)
+        self.assertEqual(spec.maxwaittime, 100)
 
-        self.assertEqual(fs["kwargs"], kwargs)
+        self.assertEqual(spec.kwargs, kwargs)

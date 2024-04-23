@@ -1,11 +1,10 @@
 from pycolonies import colonies_client
 from pycolonies import func_spec
 from pycolonies import Workflow
-import copy
 
 colonies, colonyname, colony_prvkey, executorid, executor_prvkey = colonies_client()
 
-func_spec = func_spec(func="helloworld", 
+fs1 = func_spec(func="hello1", 
                       args=[], 
                       colonyname=colonyname, 
                       executortype="helloworld-executor",
@@ -13,9 +12,25 @@ func_spec = func_spec(func="helloworld",
                       maxretries=3,
                       maxwaittime=100)
 
-wf = Workflow(colonyname)
-wf.add(func_spec, nodename="hello1", dependencies=[])
-wf.add(copy.deepcopy(func_spec), nodename="hello2", dependencies=["hello1"])
-wf.add(copy.deepcopy(func_spec), nodename="hello3", dependencies=["hello1"])
+fs2 = func_spec(func="hello2", 
+                      args=[], 
+                      colonyname=colonyname, 
+                      executortype="helloworld-executor",
+                      maxexectime=10,
+                      maxretries=3,
+                      maxwaittime=100)
 
-colonies.submit(wf, executor_prvkey)
+fs3 = func_spec(func="hello3", 
+                      args=[], 
+                      colonyname=colonyname, 
+                      executortype="helloworld-executor",
+                      maxexectime=10,
+                      maxretries=3,
+                      maxwaittime=100)
+
+fs2.conditions.dependencies.append("hello1")
+fs3.conditions.dependencies.append("hello2")
+
+wf = Workflow(colonyname=colonyname, functionspecs=[fs1, fs2, fs3])
+
+colonies.submit_workflow(wf, executor_prvkey)
