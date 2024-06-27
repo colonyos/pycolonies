@@ -2,12 +2,13 @@ import requests
 import json 
 import sys
 sys.path.append(".")
-from crypto import Crypto
+from model import Process, FuncSpec, Workflow, ProcessGraph, Conditions
 import base64
 from websocket import create_connection
 import inspect
 import os
 import ctypes
+from colonyos_ecdsa import sign
 
 def colonies_client():
     colonies_server = os.getenv("COLONIES_SERVER_HOST")
@@ -31,30 +32,28 @@ class ColoniesConnectionError(Exception):
 class ColoniesError(Exception):
     pass
     
-def func_spec(func, args, colonyname, executortype, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None, fs=None):
+def func_spec(func, args, colonyname, executortype, executorname=None, priority=1, maxexectime=-1, maxretries=-1, maxwaittime=-1, code=None, kwargs=None, fs=None):
     if isinstance(func, str):
-        func_spec = {
-            "nodename": func,
-            "funcname": func, 
-            "args": args,
-            "kwargs": kwargs,
-            "fs": fs,
-            "priority": priority,
-            "maxwaittime": maxwaittime,
-            "maxexectime": maxexectime,
-            "maxretries": maxretries,
-            "conditions": {
-                "colonyname": colonyname,
-                "executortype": executortype
-            },
-            "label": ""
-        }
+        func_spec = FuncSpec(
+            nodename=func,
+            funcname=func, 
+            args=args,
+            kwargs=kwargs,
+            fs=fs,
+            priority=priority,
+            maxwaittime=maxwaittime,
+            maxexectime=maxexectime,
+            maxretries=maxretries,
+            conditions= Conditions(
+                colonyname=colonyname,
+                executortype=executortype
+            )
+        )
         if code is not None:
             code_bytes = code.encode("ascii")
             code_base64_bytes = base64.b64encode(code_bytes)
             code_base64 = code_base64_bytes.decode("ascii")
-            func_spec["env"] = {}
-            func_spec["env"]["code"] = code_base64
+            func_spec.env["code"] = code_base64
 
     else:
         code = inspect.getsource(func)
@@ -66,42 +65,29 @@ def func_spec(func, args, colonyname, executortype, priority=1, maxexectime=-1, 
         args_spec = inspect.getfullargspec(func)
         args_spec_str = ','.join(args_spec.args)
 
-        func_spec = {
-            "nodename": funcname,
-            "funcname": funcname,
-            "args": args,
-            "kwargs": kwargs,
-            "priority": priority,
-            "maxwaittime": maxwaittime,
-            "maxexectime": maxexectime,
-            "maxretries": maxretries,
-            "conditions": {
-                "colonyname": colonyname,
-                "executortype": executortype
-            },
-            "env": {
+        func_spec = FuncSpec(
+            nodename=funcname,
+            funcname=funcname,
+            args=args,
+            kwargs=kwargs,
+            priority=priority,
+            maxwaittime=maxwaittime,
+            maxexectime=maxexectime,
+            maxretries=maxretries,
+            conditions=Conditions(
+                colonyname=colonyname,
+                executortype=executortype
+            ),
+            env={
                 "args_spec": args_spec_str,
                 "code": code_base64,
-            },
-        }
+            }
+        )
+
+    if executorname is not None:
+            func_spec.conditions.executornames = [ executorname ]
 
     return func_spec
-
-class Workflow:
-    def __init__(self, colonyname):
-        self.colonyname = colonyname
-        self.func_specs = []
-
-    def add(self, func_spec, nodename, dependencies):
-        func_spec["nodename"] = nodename
-        func_spec["conditions"]["dependencies"] = dependencies
-        self.func_specs.append(func_spec)
-
-    def workflow_spec(self):
-        return { 
-                "colonyname" : self.colonyname,
-                "functionspecs" : self.func_specs
-                }
 
 class Colonies:
     WAITING = 0
@@ -123,8 +109,21 @@ class Colonies:
     
     def __rpc(self, msg, prvkey):
         payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
-        crypto = Crypto()
-        signature = crypto.sign(payload, prvkey)
+        ##print("payload:", payload)
+        #crypto = Crypto()
+        #signature = crypto.sign(payload, prvkey)
+
+        signature = sign(payload, prvkey)
+
+        # print("signature:", signature)
+        # print("signatureNew:", signatureNew)
+        # print("----------------")
+        #
+        # signature = signatureNew
+
+        print("YYYYYYYYYYYYYYYYYYYYYYy")
+        print(signature)
+        print("YYYYYYYYYYYYYYYYYYYYYYy")
 
         rpc = {
             "payloadtype" : msg["msgtype"],
@@ -149,16 +148,14 @@ class Colonies:
         else:
             raise ColoniesError(payload["message"])
     
-    def wait(self, process, timeout, prvkey):
-        processid = process["processid"]
-        executortype = process["spec"]["conditions"]["executortype"]
+    def wait(self, process: Process, timeout, prvkey) -> Process:
         state = 2
         msg = {
-            "processid": processid,
-            "executortype": executortype,
+            "processid": process.processid,
+            "executortype": process.spec.conditions.executortype,
             "state": state,
             "timeout": timeout,
-            "colonyname": process["spec"]["conditions"]["colonyname"],
+            "colonyname": process.spec.conditions.colonyname,
             "msgtype": "subscribeprocessmsg"
         }
 
@@ -180,13 +177,14 @@ class Colonies:
         ws.recv()
         ws.close()
 
-        return self.get_process(process["processid"], prvkey)
+        return self.get_process(process.processid, prvkey)
 
     def add_colony(self, colony, prvkey):
         msg = {
             "msgtype": "addcolonymsg",
             "colony": colony
         }
+        print("msg:", msg)
         return self.__rpc(msg, prvkey)
     
     def del_colony(self, colonyname, prvkey):
@@ -246,28 +244,31 @@ class Colonies:
             "executorname": executorname
         }
         return self.__rpc(msg, prvkey)
-    
-    def submit(self, spec, prvkey):
-        if isinstance(spec, Workflow):
-            msg = {
-                "msgtype": "submitworkflowspecmsg",
-                "spec": spec.workflow_spec()
-            }
-            return self.__rpc(msg, prvkey)
-        else:
-            msg = {
+                
+    def submit_func_spec(self, spec: FuncSpec, prvkey) -> Process:
+        msg = {
                 "msgtype": "submitfuncspecmsg",
-                "spec": spec
+                "spec": spec.model_dump()
             }
-            return self.__rpc(msg, prvkey)
+        response = self.__rpc(msg, prvkey)
+        return Process(**response)
     
-    def assign(self, colonyname, timeout, prvkey):
+    def submit_workflow(self, workflow: Workflow, prvkey) -> ProcessGraph:
+        msg = {
+                "msgtype": "submitworkflowspecmsg",
+                "spec": workflow.model_dump()
+            }
+        response = self.__rpc(msg, prvkey)
+        return ProcessGraph(**response)
+
+    def assign(self, colonyname, timeout, prvkey) -> Process:
         msg = {
             "msgtype": "assignprocessmsg",
             "timeout": timeout,
             "colonyname": colonyname
         }
-        return self.__rpc(msg, prvkey)
+        response = self.__rpc(msg, prvkey)
+        return Process(**response)
   
     def list_processes(self, colonyname, count, state, prvkey):
         msg = {
@@ -278,12 +279,13 @@ class Colonies:
         }
         return self.__rpc(msg, prvkey)
     
-    def get_process(self, processid, prvkey):
+    def get_process(self, processid, prvkey) -> Process:
         msg = {
             "msgtype": "getprocessmsg",
             "processid": processid
         }
-        return self.__rpc(msg, prvkey)
+        response = self.__rpc(msg, prvkey)
+        return Process(**response)
     
     def remove_process(self, processid, prvkey):
         msg = {
@@ -351,7 +353,8 @@ class Colonies:
             "msgtype": "getprocessgraphmsg",
             "processgraphid": processgraphid
         }
-        return self.__rpc(msg, prvkey)
+        graph = self.__rpc(msg, prvkey)
+        return ProcessGraph(**graph)
     
     def add_function(self, colonyname, executorname, funcname, prvkey):
         func = {}
@@ -383,19 +386,19 @@ class Colonies:
     def find_process(self, nodename, processids, prvkey):
         for processid in processids:
             process = self.get_process(processid, prvkey)
-            if process["spec"]["nodename"] == nodename:
+            if process.spec.nodename == nodename:
                 return process
         return None
     
-    def add_child(self, processgraphid, parentprocessid, childprocessid, funcspec, nodename, insert, prvkey):
-        funcspec["nodename"] = nodename
+    def add_child(self, processgraphid, parentprocessid, childprocessid, funcspec: FuncSpec, nodename, insert, prvkey):
+        funcspec.nodename = nodename
         msg = {
             "msgtype": "addchildmsg",
             "processgraphid": processgraphid,
             "parentprocessid": parentprocessid,
             "childprocessid": childprocessid,
             "insert": insert,
-            "spec": funcspec
+            "spec": funcspec.model_dump()
         }
         return self.__rpc(msg, prvkey)
     

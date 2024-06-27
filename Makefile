@@ -6,7 +6,6 @@ build:
 
 .PHONY: test
 test:
-	@python3 ./test/crypto_test.py
 	@python3 ./test/colonies_test.py
 
 .PHONY: github_test
@@ -19,7 +18,6 @@ github_test:
 	./colonies executor add --spec ./executor.json --executorid ${COLONIES_EXECUTOR_ID}
 	./colonies executor approve --name ${COLONIES_EXECUTOR_NAME}
 	@pip3 install -r requirements.txt
-	@python3 ./test/crypto_test.py
 	@python3 ./test/colonies_test.py
 
 .PHONY: install
