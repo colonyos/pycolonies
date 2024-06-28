@@ -1,19 +1,17 @@
 import unittest
-import sys
 import string
 import random
-
+import sys
 sys.path.append(".")
 from crypto import Crypto
 from pycolonies import Colonies
 from model import FuncSpec, Conditions, Workflow
 import os
 
-
 class TestColonies(unittest.TestCase):
     def setUp(self):
-        self.colonies = Colonies("localhost", 50080, tls=False)
-        self.crypto = Crypto()
+        self.colonies = Colonies("localhost", 50080, tls=False, native_crypto=False)
+        self.crypto = Crypto(native=False)
         self.server_prv = (
             "fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d"
         )

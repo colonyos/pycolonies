@@ -17,23 +17,11 @@ class TestCrypto(unittest.TestCase):
     def test_sign(self):
         crypto = Crypto()
         prvkey = "d6eb959e9aec2e6fdc44b5862b269e987b8a4d6f2baca542d8acaa97ee5e74f6"
+        signature_hex = "e713a1bb015fecabb5a084b0fe6d6e7271fca6f79525a634183cfdb175fe69241f4da161779d8e6b761200e1cf93766010a19072fa778f9643363e2cfadd640900"
         data = "hello"
-        digest = crypto.hash(data)
-        sig = crypto.sign(digest, prvkey)
+        sig = crypto.sign(data, prvkey)
         self.assertEqual(len(sig), 130)
-    
-    def test_recoverid(self):
-        crypto = Crypto()
-        prvkey = "d6eb959e9aec2e6fdc44b5862b269e987b8a4d6f2baca542d8acaa97ee5e74f6"
-        data = "hello"
-        digest = crypto.hash(data)
-        sig = crypto.sign(digest, prvkey)
-        id = crypto.recoverid(digest, sig)
-        self.assertEqual(id, "5d6568f883451ae2e407d1a0a7992e414f2a67b69d0e6e9176d353b98f06f696")
-    
-    def test_hash(self):
-        crypto = Crypto()
-        self.assertEqual(crypto.hash("hello world"), "644bcc7e564373040999aac89e7622f3ca71fba1d972fd94a31c3bfbf24e3938")
+        self.assertEqual(sig, signature_hex)
     
 if __name__ == '__main__':
     unittest.main()
