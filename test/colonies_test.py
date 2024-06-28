@@ -1,8 +1,8 @@
 import unittest
-import sys
 import string
 import random
-
+import sys
+sys.path.append(".")
 from crypto import Crypto
 from pycolonies import Colonies
 from model import FuncSpec, Conditions, Workflow
