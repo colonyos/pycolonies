@@ -1,5 +1,5 @@
 # This code is based on the code from the following repository (MIT-licensed):
-# https://github.com/ethereum/eth-utils/tree/main/eth_utils
+# https://github.com/ethereum/eth-utils
 # https://github.com/ethereum/eth-keys 
 
 import ctypes
