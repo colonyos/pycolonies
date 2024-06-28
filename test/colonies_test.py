@@ -3,16 +3,15 @@ import sys
 import string
 import random
 
-sys.path.append(".")
-sys.path.append("..")
-from colonyos_ecdsa import genkey, get_id
+from crypto import Crypto
 from pycolonies import Colonies
 from model import FuncSpec, Conditions, Workflow
 import os
 
 class TestColonies(unittest.TestCase):
     def setUp(self):
-        self.colonies = Colonies("localhost", 50080, tls=False)
+        self.colonies = Colonies("localhost", 50080, tls=False, native_crypto=False)
+        self.crypto = Crypto(native=False)
         self.server_prv = (
             "fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d"
         )
@@ -21,8 +20,8 @@ class TestColonies(unittest.TestCase):
         return "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
     def add_test_colony(self):
-        colony_prvkey = genkey()
-        colonyid = get_id(colony_prvkey)
+        colony_prvkey = self.crypto.prvkey()
+        colonyid = self.crypto.id(colony_prvkey)
         colony = {"colonyid": colonyid, "name": "python-test-" + self.ran_prefix()}
 
         return (
@@ -33,8 +32,8 @@ class TestColonies(unittest.TestCase):
         )
 
     def add_test_executor(self, colonyname, colony_prvkey):
-        executor_prvkey = genkey()
-        executorid = get_id(executor_prvkey)
+        executor_prvkey = self.crypto.prvkey()
+        executorid = self.crypto.id(executor_prvkey)
 
         executor = {
             "executorname": "test-executor-" + self.ran_prefix(),

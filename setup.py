@@ -5,12 +5,12 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pycolonies",
-    version="1.0.16",
+    version="1.0.17",
     author="Johan Kristiansson",
     author_email="johan.kristiansson@ri.se",
     description="Colonies Python SDK",
     long_description=long_description,
-    py_modules=["pycolonies", "crypto", "cfs"],
+    py_modules=["pycolonies", "crypto", "cfs", "model"],
     long_description_content_type="text/markdown",
     url="https://github.com/colonyos/pycolonies",
     packages=setuptools.find_packages(),
