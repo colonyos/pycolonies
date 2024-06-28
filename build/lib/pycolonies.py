@@ -109,21 +109,7 @@ class Colonies:
     
     def __rpc(self, msg, prvkey):
         payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
-        ##print("payload:", payload)
-        #crypto = Crypto()
-        #signature = crypto.sign(payload, prvkey)
-
         signature = sign(payload, prvkey)
-
-        # print("signature:", signature)
-        # print("signatureNew:", signatureNew)
-        # print("----------------")
-        #
-        # signature = signatureNew
-
-        print("YYYYYYYYYYYYYYYYYYYYYYy")
-        print(signature)
-        print("YYYYYYYYYYYYYYYYYYYYYYy")
 
         rpc = {
             "payloadtype" : msg["msgtype"],
@@ -184,7 +170,6 @@ class Colonies:
             "msgtype": "addcolonymsg",
             "colony": colony
         }
-        print("msg:", msg)
         return self.__rpc(msg, prvkey)
     
     def del_colony(self, colonyname, prvkey):

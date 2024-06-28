@@ -21,13 +21,9 @@ class TestColonies(unittest.TestCase):
         return "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
     def add_test_colony(self):
-        print("---------------------- add_test_colony ----------------------")
         colony_prvkey = genkey()
-        print("colony_prvkey", colony_prvkey)
         colonyid = get_id(colony_prvkey)
-        print("colonyid", colonyid)
         colony = {"colonyid": colonyid, "name": "python-test-" + self.ran_prefix()}
-        print("colony", colony)
 
         return (
             self.colonies.add_colony(colony, self.server_prv),
@@ -39,9 +35,6 @@ class TestColonies(unittest.TestCase):
     def add_test_executor(self, colonyname, colony_prvkey):
         executor_prvkey = genkey()
         executorid = get_id(executor_prvkey)
-
-        print("executor_prvkey", executor_prvkey)
-        print("executorid", executorid)
 
         executor = {
             "executorname": "test-executor-" + self.ran_prefix(),
@@ -102,461 +95,461 @@ class TestColonies(unittest.TestCase):
         self.assertEqual(executorid, added_executor["executorid"])
         self.colonies.del_colony(colonyname, self.server_prv)
 
-    # def test_approve_executor(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #     executors_from_server = self.colonies.list_executors(
-    #         colonyname, executor_prvkey
-    #     )
-    #     self.assertEqual(executors_from_server[0]["state"], 1)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_reject_executor(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #     self.colonies.reject_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_list_executors(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #     executors_from_server = self.colonies.list_executors(
-    #         colonyname, executor_prvkey
-    #     )
-    #     self.assertEqual(executors_from_server[0]["state"], 1)
-    #
-    #     executors_from_server = self.colonies.list_executors(
-    #         colonyname, executor_prvkey
-    #     )
-    #     self.assertEqual(executors_from_server[0]["executorname"], executorname)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_remove_executor(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, _ = self.add_test_executor(colonyname, colony_prvkey)
-    #
-    #     self.colonies.remove_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_submit(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #     process = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.assertEqual(process.state, 0)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_submit_workflow(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #     workflow = Workflow(
-    #         colonyname=colonyname,
-    #         functionspecs=[
-    #             FuncSpec(
-    #                 nodename="node1",
-    #                 conditions=Conditions(
-    #                     colonyname=colonyname, executortype="test-executor-type"
-    #                 ),
-    #                 env={"test_key": "test_value2"},
-    #                 maxexectime=-1,
-    #                 maxretries=3,
-    #             ),
-    #             FuncSpec(
-    #                 nodename="node2",
-    #                 conditions=Conditions(
-    #                     colonyname=colonyname,
-    #                     executortype="test-executor-type",
-    #                     dependencies=["node1"],
-    #                 ),
-    #                 env={"test_key": "test_value2"},
-    #                 maxexectime=-1,
-    #                 maxretries=3,
-    #             ),
-    #         ],
-    #     )
-    #     process = self.colonies.submit_workflow(workflow, executor_prvkey)
-    #     self.assertEqual(process.state, 0)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_assign(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #     process = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #
-    #     assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
-    #     self.assertEqual(assigned_process.processid, process.processid)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_list_process(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #
-    #     waiting_processes = self.colonies.list_processes(
-    #         colonyname, 2, Colonies.WAITING, executor_prvkey
-    #     )
-    #     self.assertEqual(len(waiting_processes), 2)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_get_process(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #
-    #     process = self.colonies.get_process(
-    #         submitted_process.processid, executor_prvkey
-    #     )
-    #     self.assertEqual(process.processid, submitted_process.processid)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
+    def test_approve_executor(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
 
-    # def test_remove_process(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        executors_from_server = self.colonies.list_executors(
+            colonyname, executor_prvkey
+        )
+        self.assertEqual(executors_from_server[0]["state"], 1)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_reject_executor(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        self.colonies.reject_executor(colonyname, executorname, colony_prvkey)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_list_executors(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        executors_from_server = self.colonies.list_executors(
+            colonyname, executor_prvkey
+        )
+        self.assertEqual(executors_from_server[0]["state"], 1)
+
+        executors_from_server = self.colonies.list_executors(
+            colonyname, executor_prvkey
+        )
+        self.assertEqual(executors_from_server[0]["executorname"], executorname)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_remove_executor(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, _ = self.add_test_executor(colonyname, colony_prvkey)
+
+        self.colonies.remove_executor(colonyname, executorname, colony_prvkey)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_submit(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        process = self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.assertEqual(process.state, 0)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_submit_workflow(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        workflow = Workflow(
+            colonyname=colonyname,
+            functionspecs=[
+                FuncSpec(
+                    nodename="node1",
+                    conditions=Conditions(
+                        colonyname=colonyname, executortype="test-executor-type"
+                    ),
+                    env={"test_key": "test_value2"},
+                    maxexectime=-1,
+                    maxretries=3,
+                ),
+                FuncSpec(
+                    nodename="node2",
+                    conditions=Conditions(
+                        colonyname=colonyname,
+                        executortype="test-executor-type",
+                        dependencies=["node1"],
+                    ),
+                    env={"test_key": "test_value2"},
+                    maxexectime=-1,
+                    maxretries=3,
+                ),
+            ],
+        )
+        process = self.colonies.submit_workflow(workflow, executor_prvkey)
+        self.assertEqual(process.state, 0)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_assign(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        process = self.submit_test_funcspec(colonyname, executor_prvkey)
+
+        assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
+        self.assertEqual(assigned_process.processid, process.processid)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_list_process(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+
+        waiting_processes = self.colonies.list_processes(
+            colonyname, 2, Colonies.WAITING, executor_prvkey
+        )
+        self.assertEqual(len(waiting_processes), 2)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_get_process(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
+
+        process = self.colonies.get_process(
+            submitted_process.processid, executor_prvkey
+        )
+        self.assertEqual(process.processid, submitted_process.processid)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_remove_process(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
+
+        self.colonies.remove_process(submitted_process.processid, executor_prvkey)
+
+        with self.assertRaises(Exception):
+            self.colonies.get_process(submitted_process.processid, executor_prvkey)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
     #
-    #     submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #
-    #     self.colonies.remove_process(submitted_process.processid, executor_prvkey)
-    #
-    #     with self.assertRaises(Exception):
-    #         self.colonies.get_process(submitted_process.processid, executor_prvkey)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # #
-    # def test_close_process(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     submitted_process1 = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     submitted_process2 = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #
-    #     self.colonies.close(submitted_process1.processid, [], executor_prvkey)
-    #     self.colonies.fail(submitted_process2.processid, [], executor_prvkey)
-    #
-    #     waiting_processes = self.colonies.list_processes(
-    #         colonyname, 2, Colonies.WAITING, executor_prvkey
-    #     )
-    #     running_processes = self.colonies.list_processes(
-    #         colonyname, 2, Colonies.RUNNING, executor_prvkey
-    #     )
-    #     successful_processes = self.colonies.list_processes(
-    #         colonyname, 2, Colonies.SUCCESSFUL, executor_prvkey
-    #     )
-    #     failed_processes = self.colonies.list_processes(
-    #         colonyname, 2, Colonies.FAILED, executor_prvkey
-    #     )
-    #
-    #     self.assertEqual(len(waiting_processes), 1)
-    #     self.assertEqual(len(running_processes), 1)
-    #     self.assertEqual(len(successful_processes), 1)
-    #     self.assertEqual(len(failed_processes), 1)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_stats(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     submitted_process1 = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     submitted_process2 = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #
-    #     self.colonies.close(submitted_process1.processid, [], executor_prvkey)
-    #     self.colonies.fail(submitted_process2.processid, [], executor_prvkey)
-    #
-    #     waiting_processes = self.colonies.list_processes(
-    #         colonyname, 2, 0, executor_prvkey
-    #     )
-    #     running_processes = self.colonies.list_processes(
-    #         colonyname, 2, 1, executor_prvkey
-    #     )
-    #     successful_processes = self.colonies.list_processes(
-    #         colonyname, 2, 2, executor_prvkey
-    #     )
-    #     failed_processes = self.colonies.list_processes(
-    #         colonyname, 2, 3, executor_prvkey
-    #     )
-    #
-    #     stats = self.colonies.stats(colonyname, executor_prvkey)
-    #
-    #     self.assertEqual(len(waiting_processes), stats["waitingprocesses"])
-    #     self.assertEqual(len(running_processes), stats["runningprocesses"])
-    #     self.assertEqual(len(successful_processes), stats["successfulprocesses"])
-    #     self.assertEqual(len(failed_processes), stats["failedprocesses"])
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_set_output(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
-    #     self.colonies.set_output(
-    #         assigned_process.processid, ["output1", "output2"], executor_prvkey
-    #     )
-    #
-    #     process_from_server = self.colonies.get_process(
-    #         assigned_process.processid, executor_prvkey
-    #     )
-    #     self.assertTrue(len(process_from_server.output) == 2)
-    #     self.assertTrue(process_from_server.output[0] == "output1")
-    #     self.assertTrue(process_from_server.output[1] == "output2")
-    #
-    # def test_add_attribute(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, executorname, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #
-    #     self.colonies.add_attribute(
-    #         submitted_process.processid, "py_test_key", "py_test_value", executor_prvkey
-    #     )
-    #
-    #     process = self.colonies.get_process(
-    #         submitted_process.processid, executor_prvkey
-    #     )
-    #     found = False
-    #     for attr in process.attributes:
-    #         if attr.key == "py_test_key" and attr.value == "py_test_value":
-    #             found = True
-    #     self.assertTrue(found)
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_get_attribute(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
-    #     self.colonies.assign(colonyname, 10, executor_prvkey)
-    #
-    #     attribute = self.colonies.add_attribute(
-    #         submitted_process.processid, "py_test_key", "py_test_value", executor_prvkey
-    #     )
-    #     attribute_from_server = self.colonies.get_attribute(
-    #         attribute["attributeid"], executor_prvkey
-    #     )
-    #     self.assertEqual(attribute_from_server["attributeid"], attribute["attributeid"])
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_add_function(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.colonies.add_function(
-    #         colonyname, executorname, "funcname", executor_prvkey
-    #     )
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_get_functions_by_colony(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.colonies.add_function(
-    #         colonyname, executorname, "funcname", executor_prvkey
-    #     )
-    #     functions = self.colonies.get_functions_by_colony(colonyname, executor_prvkey)
-    #     self.assertTrue(len(functions) == 1)
-    #     self.assertEqual(functions[0]["funcname"], "funcname")
-    #
-    # def test_get_functions_by_executor(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.colonies.add_function(
-    #         colonyname, executorname, "funcname", executor_prvkey
-    #     )
-    #     functions = self.colonies.get_functions_by_executor(
-    #         colonyname, executorname, executor_prvkey
-    #     )
-    #     self.assertTrue(len(functions) == 1)
-    #     self.assertEqual(functions[0]["funcname"], "funcname")
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_create_snapshot(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     self.colonies.create_snapshot(
-    #         colonyname, "test_label", "test_name", executor_prvkey
-    #     )
-    #     snapshots = self.colonies.get_snapshots(colonyname, executor_prvkey)
-    #     self.assertTrue(len(snapshots) == 1)
-    #     snapshot = self.colonies.get_snapshot_by_name(
-    #         colonyname, "test_name", executor_prvkey
-    #     )
-    #     self.assertEqual(snapshot["name"], "test_name")
-    #     snapshot2 = self.colonies.get_snapshot_by_id(
-    #         colonyname, snapshot["snapshotid"], executor_prvkey
-    #     )
-    #     self.assertEqual(snapshot2["name"], "test_name")
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_get_add_logs(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, executorid, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     func_spec = FuncSpec(
-    #         conditions=Conditions(
-    #             colonyname=colonyname, executortype="test-executor-type"
-    #         ),
-    #         env={"test_key": "test_value2"},
-    #         maxexectime=-1,
-    #         maxretries=3,
-    #     )
-    #
-    #     self.colonies.submit_func_spec(func_spec, executor_prvkey)
-    #     assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
-    #
-    #     self.colonies.add_log(
-    #         assigned_process.processid, "test_log_msg", executor_prvkey
-    #     )
-    #     logs = self.colonies.get_process_log(
-    #         colonyname, assigned_process.processid, 100, -1, executor_prvkey
-    #     )
-    #     self.assertTrue(len(logs) == 1)
-    #     self.assertEqual(logs[0]["message"], "test_log_msg")
-    #
-    #     logs = self.colonies.get_executor_log(
-    #         colonyname, executorname, 100, -1, executor_prvkey
-    #     )
-    #     self.assertTrue(len(logs) == 1)
-    #     self.assertEqual(logs[0]["message"], "test_log_msg")
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_sync(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     testdir = "/tmp/testdir" + str(random.randint(0, 1000000))
-    #     os.system("mkdir -p " + testdir)
-    #     os.system("echo hello > " + testdir + "/hello.txt")
-    #
-    #     self.colonies.sync(testdir, "/test", False, colonyname, executor_prvkey)
-    #
-    #     testdir2 = "/tmp/testdir" + str(random.randint(0, 1000000))
-    #     os.system("mkdir -p " + testdir2)
-    #     self.colonies.sync(testdir2, "/test", False, colonyname, executor_prvkey)
-    #
-    #     # check if the files are the same
-    #     f = open(testdir + "/hello.txt", "r")
-    #     hello = f.read()
-    #     f.close()
-    #     self.assertEqual(hello, "hello\n")
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
-    #
-    # def test_get_files(self):
-    #     _, _, colonyname, colony_prvkey = self.add_test_colony()
-    #     _, _, executorname, executor_prvkey = self.add_test_executor(
-    #         colonyname, colony_prvkey
-    #     )
-    #     self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
-    #
-    #     testdir = "/tmp/testdir" + str(random.randint(0, 1000000))
-    #     os.system("mkdir -p " + testdir)
-    #     os.system("echo hello > " + testdir + "/hello.txt")
-    #
-    #     self.colonies.sync(testdir, "/test", False, colonyname, executor_prvkey)
-    #
-    #     testdir2 = "/tmp/testdir" + str(random.randint(0, 1000000))
-    #     os.system("mkdir -p " + testdir2)
-    #     self.colonies.sync(testdir2, "/test", False, colonyname, executor_prvkey)
-    #
-    #     files = self.colonies.get_files("/test", colonyname, executor_prvkey)
-    #     assert len(files) == 1
-    #
-    #     self.colonies.del_colony(colonyname, self.server_prv)
+    def test_close_process(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        submitted_process1 = self.submit_test_funcspec(colonyname, executor_prvkey)
+        submitted_process2 = self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+
+        self.colonies.close(submitted_process1.processid, [], executor_prvkey)
+        self.colonies.fail(submitted_process2.processid, [], executor_prvkey)
+
+        waiting_processes = self.colonies.list_processes(
+            colonyname, 2, Colonies.WAITING, executor_prvkey
+        )
+        running_processes = self.colonies.list_processes(
+            colonyname, 2, Colonies.RUNNING, executor_prvkey
+        )
+        successful_processes = self.colonies.list_processes(
+            colonyname, 2, Colonies.SUCCESSFUL, executor_prvkey
+        )
+        failed_processes = self.colonies.list_processes(
+            colonyname, 2, Colonies.FAILED, executor_prvkey
+        )
+
+        self.assertEqual(len(waiting_processes), 1)
+        self.assertEqual(len(running_processes), 1)
+        self.assertEqual(len(successful_processes), 1)
+        self.assertEqual(len(failed_processes), 1)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_stats(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        submitted_process1 = self.submit_test_funcspec(colonyname, executor_prvkey)
+        submitted_process2 = self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+
+        self.colonies.close(submitted_process1.processid, [], executor_prvkey)
+        self.colonies.fail(submitted_process2.processid, [], executor_prvkey)
+
+        waiting_processes = self.colonies.list_processes(
+            colonyname, 2, 0, executor_prvkey
+        )
+        running_processes = self.colonies.list_processes(
+            colonyname, 2, 1, executor_prvkey
+        )
+        successful_processes = self.colonies.list_processes(
+            colonyname, 2, 2, executor_prvkey
+        )
+        failed_processes = self.colonies.list_processes(
+            colonyname, 2, 3, executor_prvkey
+        )
+
+        stats = self.colonies.stats(colonyname, executor_prvkey)
+
+        self.assertEqual(len(waiting_processes), stats["waitingprocesses"])
+        self.assertEqual(len(running_processes), stats["runningprocesses"])
+        self.assertEqual(len(successful_processes), stats["successfulprocesses"])
+        self.assertEqual(len(failed_processes), stats["failedprocesses"])
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_set_output(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        self.submit_test_funcspec(colonyname, executor_prvkey)
+        assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
+        self.colonies.set_output(
+            assigned_process.processid, ["output1", "output2"], executor_prvkey
+        )
+
+        process_from_server = self.colonies.get_process(
+            assigned_process.processid, executor_prvkey
+        )
+        self.assertTrue(len(process_from_server.output) == 2)
+        self.assertTrue(process_from_server.output[0] == "output1")
+        self.assertTrue(process_from_server.output[1] == "output2")
+
+    def test_add_attribute(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, executorname, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+
+        self.colonies.add_attribute(
+            submitted_process.processid, "py_test_key", "py_test_value", executor_prvkey
+        )
+
+        process = self.colonies.get_process(
+            submitted_process.processid, executor_prvkey
+        )
+        found = False
+        for attr in process.attributes:
+            if attr.key == "py_test_key" and attr.value == "py_test_value":
+                found = True
+        self.assertTrue(found)
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_get_attribute(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        submitted_process = self.submit_test_funcspec(colonyname, executor_prvkey)
+        self.colonies.assign(colonyname, 10, executor_prvkey)
+
+        attribute = self.colonies.add_attribute(
+            submitted_process.processid, "py_test_key", "py_test_value", executor_prvkey
+        )
+        attribute_from_server = self.colonies.get_attribute(
+            attribute["attributeid"], executor_prvkey
+        )
+        self.assertEqual(attribute_from_server["attributeid"], attribute["attributeid"])
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_add_function(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        self.colonies.add_function(
+            colonyname, executorname, "funcname", executor_prvkey
+        )
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_get_functions_by_colony(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        self.colonies.add_function(
+            colonyname, executorname, "funcname", executor_prvkey
+        )
+        functions = self.colonies.get_functions_by_colony(colonyname, executor_prvkey)
+        self.assertTrue(len(functions) == 1)
+        self.assertEqual(functions[0]["funcname"], "funcname")
+
+    def test_get_functions_by_executor(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        self.colonies.add_function(
+            colonyname, executorname, "funcname", executor_prvkey
+        )
+        functions = self.colonies.get_functions_by_executor(
+            colonyname, executorname, executor_prvkey
+        )
+        self.assertTrue(len(functions) == 1)
+        self.assertEqual(functions[0]["funcname"], "funcname")
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_create_snapshot(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        self.colonies.create_snapshot(
+            colonyname, "test_label", "test_name", executor_prvkey
+        )
+        snapshots = self.colonies.get_snapshots(colonyname, executor_prvkey)
+        self.assertTrue(len(snapshots) == 1)
+        snapshot = self.colonies.get_snapshot_by_name(
+            colonyname, "test_name", executor_prvkey
+        )
+        self.assertEqual(snapshot["name"], "test_name")
+        snapshot2 = self.colonies.get_snapshot_by_id(
+            colonyname, snapshot["snapshotid"], executor_prvkey
+        )
+        self.assertEqual(snapshot2["name"], "test_name")
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_get_add_logs(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, executorid, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        func_spec = FuncSpec(
+            conditions=Conditions(
+                colonyname=colonyname, executortype="test-executor-type"
+            ),
+            env={"test_key": "test_value2"},
+            maxexectime=-1,
+            maxretries=3,
+        )
+
+        self.colonies.submit_func_spec(func_spec, executor_prvkey)
+        assigned_process = self.colonies.assign(colonyname, 10, executor_prvkey)
+
+        self.colonies.add_log(
+            assigned_process.processid, "test_log_msg", executor_prvkey
+        )
+        logs = self.colonies.get_process_log(
+            colonyname, assigned_process.processid, 100, -1, executor_prvkey
+        )
+        self.assertTrue(len(logs) == 1)
+        self.assertEqual(logs[0]["message"], "test_log_msg")
+
+        logs = self.colonies.get_executor_log(
+            colonyname, executorname, 100, -1, executor_prvkey
+        )
+        self.assertTrue(len(logs) == 1)
+        self.assertEqual(logs[0]["message"], "test_log_msg")
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_sync(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        testdir = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir)
+        os.system("echo hello > " + testdir + "/hello.txt")
+
+        self.colonies.sync(testdir, "/test", False, colonyname, executor_prvkey)
+
+        testdir2 = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir2)
+        self.colonies.sync(testdir2, "/test", False, colonyname, executor_prvkey)
+
+        # check if the files are the same
+        f = open(testdir + "/hello.txt", "r")
+        hello = f.read()
+        f.close()
+        self.assertEqual(hello, "hello\n")
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+
+    def test_get_files(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        testdir = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir)
+        os.system("echo hello > " + testdir + "/hello.txt")
+
+        self.colonies.sync(testdir, "/test", False, colonyname, executor_prvkey)
+
+        testdir2 = "/tmp/testdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + testdir2)
+        self.colonies.sync(testdir2, "/test", False, colonyname, executor_prvkey)
+
+        files = self.colonies.get_files("/test", colonyname, executor_prvkey)
+        assert len(files) == 1
+
+        self.colonies.del_colony(colonyname, self.server_prv)
 
 
 if __name__ == "__main__":

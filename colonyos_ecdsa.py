@@ -78,17 +78,11 @@ def sign(msg, prv_hex):
     return sig_hex
 
 def get_id(prv_key):
-    print("get_id:", prv_key)
     prv_key_bytes = bytes.fromhex(prv_key)
     pub = private_key_to_public_key(prv_key_bytes)
-    print("pub:", pub)
-    pub_hex = pub.hex()
+    pub_hex = "04"+pub.hex()  # the prefix "04" denotes that the public key is in uncompressed format
     hash = hashlib.sha3_256()
     hash.update(pub_hex.encode('utf-8'))
-    print("--------------------")
-    print("pub_hex:", pub_hex)
-    print("--------------------")
-    print("pub_hex_hash:", hash.hexdigest())
     
     return hash.hexdigest()
 
