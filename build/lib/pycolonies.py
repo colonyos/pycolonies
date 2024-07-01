@@ -10,6 +10,7 @@ from crypto import Crypto
 import boto3
 import hashlib
 import uuid
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
 
 def colonies_client(native_crypto=False):
     colonies_server = os.getenv("COLONIES_SERVER_HOST")
@@ -518,7 +519,20 @@ class Colonies:
         except OSError as e:
             print(f"Error getting file size: {e}")
             return None
-    
+
+    def __check_bucket(self, s3_client, bucket_name):
+        try:
+            s3_client.head_bucket(Bucket=bucket_name)
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == '404':
+                try:
+                    s3_client.create_bucket(Bucket=bucket_name)
+                except ClientError as e:
+                    raise Exception(f"Error creating bucket: {e}")
+            else:
+                raise Exception(f"Error checking bucket: {e}")
+
     def upload_file(self, colonyname, prvkey, filepath=None, label=None):
         return self.__upload_file(filepath, label, colonyname, prvkey)
     
@@ -562,6 +576,8 @@ class Colonies:
             use_ssl=use_tls,
             verify=skip_verify_str.lower() not in ['true', '1', 'yes']
         )
+
+        self.__check_bucket(s3_client, bucket_name)
 
         filename = os.path.basename(filepath)
         
