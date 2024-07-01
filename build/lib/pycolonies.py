@@ -1,12 +1,15 @@
 import requests
 import json 
-from model import Process, FuncSpec, Workflow, ProcessGraph, Conditions
+from model import Process, FuncSpec, Workflow, ProcessGraph, Conditions, Gpu, S3Object, Reference, File
 import base64
 from websocket import create_connection
 import inspect
 import os
 import ctypes
 from crypto import Crypto
+import boto3
+import hashlib
+import uuid
 
 def colonies_client(native_crypto=False):
     colonies_server = os.getenv("COLONIES_SERVER_HOST")
@@ -233,7 +236,7 @@ class Colonies:
     def submit_func_spec(self, spec: FuncSpec, prvkey) -> Process:
         msg = {
                 "msgtype": "submitfuncspecmsg",
-                "spec": spec.model_dump()
+                "spec": spec.model_dump(by_alias=True)
             }
         response = self.__rpc(msg, prvkey)
         return Process(**response)
@@ -241,7 +244,7 @@ class Colonies:
     def submit_workflow(self, workflow: Workflow, prvkey) -> ProcessGraph:
         msg = {
                 "msgtype": "submitworkflowspecmsg",
-                "spec": workflow.model_dump()
+                "spec": workflow.model_dump(by_alias=True)
             }
         response = self.__rpc(msg, prvkey)
         return ProcessGraph(**response)
@@ -479,3 +482,322 @@ class Colonies:
             "label": label
         }
         return self.__rpc(msg, prvkey)
+
+    def __generate_random_id(self):
+        random_uuid = uuid.uuid4()
+        hasher = hashlib.sha256()
+        hasher.update(random_uuid.bytes)
+        return hasher.hexdigest()
+    
+    def __checksum_file(self, file_path):
+        try:
+            with open(file_path, 'rb') as f:
+                buffer = bytearray(10000)
+                hasher = hashlib.sha256()
+                while True:
+                    n = f.readinto(buffer)
+                    if not n:
+                        break
+                    hasher.update(buffer[:n])
+            return hasher.hexdigest()
+        except Exception as e:
+            raise e 
+
+    def __checksum_data(self, file_data):
+        try:
+            hasher = hashlib.sha256()
+            hasher.update(file_data)
+            return hasher.hexdigest()
+        except Exception as e:
+            raise e
+
+    def __get_file_size(self, file_path):
+        try:
+            size = os.path.getsize(file_path)
+            return size
+        except OSError as e:
+            print(f"Error getting file size: {e}")
+            return None
+    
+    def upload_file(self, colonyname, prvkey, filepath=None, label=None):
+        return self.__upload_file(filepath, label, colonyname, prvkey)
+    
+    def upload_data(self, colonyname, prvkey, filename=None, data=None, label=None):
+        return self.__upload_file(filename, label, colonyname, prvkey, file_bytes=data)
+
+    def __upload_file(self, filepath, label, colonyname, prvkey, file_bytes=None):
+        endpoint = os.getenv("AWS_S3_ENDPOINT")
+        access_key = os.getenv("AWS_S3_ACCESSKEY")
+        secret_key = os.getenv("AWS_S3_SECRETKEY")
+        region = os.getenv("AWS_S3_REGION")
+        use_tls_str = os.getenv("AWS_S3_TLS")
+        bucket_name = os.getenv("AWS_S3_BUCKET")
+        skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
+
+        object_name = self.__generate_random_id()
+        if file_bytes is None:
+            filesize = self.__get_file_size(filepath)
+        else:
+            filesize = len(file_bytes)
+
+        endpoint_parts = endpoint.split(":")
+        if len(endpoint_parts) == 2:
+            server = endpoint_parts[0]
+            port = int(endpoint_parts[1])
+        else:
+            raise Exception("invalid endpoint")
+
+        use_tls = use_tls_str.lower() in ['true', '1', 'yes']
+
+        if not endpoint.startswith('http://') and not endpoint.startswith('https://'):
+            endpoint = f"http{'s' if use_tls else ''}://{endpoint}"
+
+
+        s3_client = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region,
+            use_ssl=use_tls,
+            verify=skip_verify_str.lower() not in ['true', '1', 'yes']
+        )
+
+        filename = os.path.basename(filepath)
+        
+        try:
+            if file_bytes is None:
+                s3_client.upload_file(filepath, bucket_name, object_name)
+            else:
+                # Upload byte array
+                s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=file_bytes)
+        except Exception as e:
+            raise e
+
+        if region == None:
+            region = ""
+
+        if use_tls_str == "true":
+            tls = True
+        else:
+            tls = False
+
+        obj = S3Object(
+            server=server,
+            port=port,
+            tls=tls,
+            accesskey="",
+            secretkey="",
+            region=region,
+            encryptionkey="",
+            encryptionalg="",
+            object=object_name,
+            bucket=bucket_name
+        )
+
+        ref = Reference(
+            protocol="s3",
+            s3object=obj
+        )
+
+        if file_bytes is None:
+            checksum = self.__checksum_file(filepath)
+        else:
+            checksum = self.__checksum_data(file_bytes)
+
+        f = File(
+            fileid="",
+            colonyname=colonyname,
+            label=label,
+            name=filename,
+            size=filesize,
+            sequencenr=1,
+            checksum=checksum,
+            checksumalg="SHA256",
+            ref=ref
+        )
+
+        msg = {
+            "msgtype": "addfilemsg",
+            "file": f.model_dump(by_alias=True)
+        }
+       
+        return self.__rpc(msg, prvkey)
+    
+    def get_file(self, colonyname, prvkey, label=None, fileid=None, filename=None, latest=True):
+        if fileid is not None and filename is not None:
+            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+        
+        msg = {
+            "msgtype": "getfilemsg",
+            "colonyname": colonyname,
+            "fileid": fileid,
+            "label": label,
+            "name": filename,
+            "latest": latest
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def __remove_file(self, label, fileid, name, colonyname, prvkey):
+        if fileid is not None and name is not None:
+            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+
+        msg = {
+            "msgtype": "removefilemsg",
+            "colonyname": colonyname,
+            "fileid": fileid,
+            "label": label,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+    
+    def download_file(self, colonyname, prvkey,  dst=None, label=None, fileid=None, filename=None, latest=True):
+        if fileid is not None and filename is not None:
+            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+        
+        access_key = os.getenv("AWS_S3_ACCESSKEY")
+        secret_key = os.getenv("AWS_S3_SECRETKEY")
+        skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
+        
+        dst = os.path.abspath(dst)
+
+        try:
+            os.makedirs(dst, exist_ok=True)
+        except Exception as e:
+            raise e
+
+        file = self.get_file(colonyname, prvkey, label=label, fileid=fileid, filename=filename, latest=latest)
+
+        if len(file) == 0:
+            raise Exception("invalid file")
+
+        object_name = file[0]["ref"]["s3object"]["object"]
+        region = file[0]["ref"]["s3object"]["region"]
+        endpoint = file[0]["ref"]["s3object"]["server"] + ":" + str(file[0]["ref"]["s3object"]["port"])
+        use_tls = file[0]["ref"]["s3object"]["tls"]
+        bucket_name = file[0]["ref"]["s3object"]["bucket"]
+
+        verify = True
+        if skip_verify_str:
+            verify = skip_verify_str.lower() not in ['true', '1', 'yes']
+
+        if not endpoint.startswith('http://') and not endpoint.startswith('https://'):
+            endpoint = f"http{'s' if use_tls else ''}://{endpoint}"
+
+        if region == "":
+            region = None
+
+        s3_client = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region,
+            use_ssl=use_tls,
+            verify=verify
+        )
+
+        dst = os.path.join(dst, filename)
+
+        try:
+            s3_client.download_file(bucket_name, object_name, dst)
+            return dst
+        except Exception as e:
+            raise e
+
+    def download_data(self, colonyname, prvkey, label=None, fileid=None, filename=None, latest=True):
+        if fileid is not None and name is not None:
+            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+        
+        access_key = os.getenv("AWS_S3_ACCESSKEY")
+        secret_key = os.getenv("AWS_S3_SECRETKEY")
+        skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
+       
+        file = self.get_file(colonyname, prvkey, label=label, fileid=fileid, filename=filename, latest=latest)
+
+        if len(file) == 0:
+            raise Exception("invalid file")
+
+        object_name = file[0]["ref"]["s3object"]["object"]
+        region = file[0]["ref"]["s3object"]["region"]
+        endpoint = file[0]["ref"]["s3object"]["server"] + ":" + str(file[0]["ref"]["s3object"]["port"])
+        use_tls = file[0]["ref"]["s3object"]["tls"]
+        bucket_name = file[0]["ref"]["s3object"]["bucket"]
+
+        verify = True
+        if skip_verify_str:
+            verify = skip_verify_str.lower() not in ['true', '1', 'yes']
+
+        if not endpoint.startswith('http://') and not endpoint.startswith('https://'):
+            endpoint = f"http{'s' if use_tls else ''}://{endpoint}"
+
+        if region == "":
+            region = None
+
+        try:
+            s3_client = boto3.client(
+                's3',
+                endpoint_url=endpoint,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                region_name=region,
+                use_ssl=use_tls,
+                verify=verify
+            )
+        except Exception as e:
+            raise e
+
+        try:
+            response = s3_client.get_object(Bucket=bucket_name, Key=object_name)
+            data = response['Body'].read()
+            print(f"Data downloaded from {bucket_name}/{object_name} successfully.")
+            return data
+        except Exception as e:
+            raise e
+
+    def delete_file(self, colonyname, prvkey, label=None, fileid=None, filename=None):
+        if fileid is not None and filename is not None:
+            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+
+        access_key = os.getenv("AWS_S3_ACCESSKEY")
+        secret_key = os.getenv("AWS_S3_SECRETKEY")
+        skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
+
+        file = self.get_file(colonyname, prvkey, label=label, fileid=fileid, filename=filename)
+
+        if len(file) == 0:
+            raise Exception("invalid file")
+
+        object_name = file[0]["ref"]["s3object"]["object"]
+        region = file[0]["ref"]["s3object"]["region"]
+        endpoint = file[0]["ref"]["s3object"]["server"] + ":" + str(file[0]["ref"]["s3object"]["port"])
+        use_tls = file[0]["ref"]["s3object"]["tls"]
+        bucket_name = file[0]["ref"]["s3object"]["bucket"]
+
+        verify = True
+        if skip_verify_str:
+            verify = skip_verify_str.lower() not in ['true', '1', 'yes']
+
+        if not endpoint.startswith('http://') and not endpoint.startswith('https://'):
+            endpoint = f"http{'s' if use_tls else ''}://{endpoint}"
+
+        if region == "":
+            region = None
+
+        s3_client = boto3.client(
+            's3',
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region,
+            use_ssl=use_tls,
+            verify=verify
+        )
+
+        try:
+            s3_client.delete_object(Bucket=bucket_name, Key=object_name)
+            print(f"Successfully deleted {object_name} from {bucket_name}")
+        except Exception as e:
+            raise e
+
+        self.__remove_file(label, fileid, filename, colonyname, prvkey)

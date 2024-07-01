@@ -549,7 +549,65 @@ class TestColonies(unittest.TestCase):
         assert len(files) == 1
 
         self.colonies.del_colony(colonyname, self.server_prv)
+    
+    def test_upload_file(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
 
+        srcdir = "/tmp/srcdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + srcdir)
+        os.system("echo hello > " + srcdir + "/hello.txt")
+        
+        dstdir = "/tmp/dstdir" + str(random.randint(0, 1000000))
+        os.system("mkdir -p " + dstdir)
+
+        filepath = srcdir + "/hello.txt"
+        self.colonies.upload_file(colonyname, executor_prvkey, filepath=filepath, label="/test")
+
+        dst = self.colonies.download_file(colonyname, executor_prvkey, dst=dstdir, label="/test", filename="hello.txt")
+        assert dst == dstdir + "/hello.txt"
+
+        f = open(dstdir + "/hello.txt", "r")
+        hello = f.read()
+        f.close()
+        self.assertEqual(hello, "hello\n")
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+    
+    def test_upload_data(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        data = b"testdata"
+        self.colonies.upload_data(colonyname, executor_prvkey, filename="data", label="/testdata", data=data)
+
+        data = self.colonies.download_data(colonyname, executor_prvkey, label="/testdata", filename="data")
+        data_str = data.decode('utf-8')
+        assert data_str == "testdata"
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+    
+    def test_get_file(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+
+        data = b"testdata"
+        self.colonies.upload_data(colonyname, executor_prvkey, filename="data", label="/testdata", data=data)
+
+        file = self.colonies.get_file(colonyname, executor_prvkey, label="/testdata", filename="data") 
+        assert len(file) == 1
+        assert file[0]["name"] == "data"
+
+        self.colonies.del_colony(colonyname, self.server_prv)
 
 if __name__ == "__main__":
     unittest.main()

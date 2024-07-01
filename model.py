@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from typing import List, Dict, Optional
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, validator
 
 class Gpu(BaseModel):
     name: str = ""
@@ -24,6 +23,11 @@ class Conditions(BaseModel):
     storage: str = ""
     gpu: Gpu | None = Gpu()
     walltime: int = 0
+
+    def __init__(self, **data):
+        if 'processes_per_node' in data:
+            data['processes-per-node'] = data.pop('processes_per_node')
+        super().__init__(**data)
 
 
 class Fs(BaseModel):
@@ -77,6 +81,13 @@ class Process(BaseModel):
     input: List[str | int | float] | None = Field(alias="in")
     output: List[str | int | float] | None = Field(alias="out")
     errors: List[str]
+    
+    def __init__(self, **data):
+        if 'input' in data:
+            data['in'] = data.pop('input')
+        if 'output' in data:
+            data['out'] = data.pop('output')
+        super().__init__(**data)
 
 
 class Workflow(BaseModel):
@@ -117,3 +128,39 @@ class ProcessGraph(BaseModel):
     processids: List[str]
     nodes: List[ProcessNode]
     edges: List[ProcessEdge]
+
+
+class S3Object(BaseModel):
+    server: str
+    port: int
+    tls: bool
+    accesskey: str = Field(..., alias="accesskey")
+    secretkey: str = Field(..., alias="secretkey")
+    region: str = Field(..., alias="region")
+    encryptionkey: str = Field(..., alias="encryptionkey")
+    encryptionalg: str = Field(..., alias="encryptionalg")
+    object: str = Field(..., alias="object")
+    bucket: str = Field(..., alias="bucket")
+
+class Reference(BaseModel):
+    protocol: str
+    s3object: S3Object = Field(..., alias="s3object")
+
+class File(BaseModel):
+    fileid: str = Field(..., alias="fileid")
+    colonyname: str = Field(..., alias="colonyname")
+    label: str = Field(..., alias="label")
+    name: str = Field(..., alias="name")
+    size: int = Field(..., alias="size")
+    sequencenr: int = Field(..., alias="sequencenr")
+    checksum: str = Field(..., alias="checksum")
+    checksumalg: str = Field(..., alias="checksumalg")
+    ref: Reference = Field(..., alias="ref")
+    added: Optional[datetime] = Field(None, alias="added")
+
+    @validator('label')
+    def ensure_single_slash(cls, v):
+        if not v.startswith('/'):
+            v = '/' + v
+        v = '/' + v.strip('/')
+        return v
