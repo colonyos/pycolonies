@@ -69,7 +69,7 @@ class PythonExecutor:
                     print(err)
 
                 try:
-                    # if "in" is defined, it is the output of the parent process,
+                    # if "input" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
                     
                     if assigned_process.input is not None and len(assigned_process.input)>0:
