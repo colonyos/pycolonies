@@ -766,7 +766,6 @@ class Colonies:
         try:
             response = s3_client.get_object(Bucket=bucket_name, Key=object_name)
             data = response['Body'].read()
-            print(f"Data downloaded from {bucket_name}/{object_name} successfully.")
             return data
         except Exception as e:
             raise e
@@ -812,7 +811,6 @@ class Colonies:
 
         try:
             s3_client.delete_object(Bucket=bucket_name, Key=object_name)
-            print(f"Successfully deleted {object_name} from {bucket_name}")
         except Exception as e:
             raise e
 
