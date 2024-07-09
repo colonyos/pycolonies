@@ -124,10 +124,16 @@ class Colonies:
         rpc_json = json.dumps(rpc) 
         try:
             reply = requests.post(url = self.url, data=rpc_json, verify=True)
+            
             reply_msg_json = json.loads(reply.content)
+            err_detected = False
+            if reply_msg_json["error"] == True:
+                err_detected = True 
             base64_payload = reply_msg_json["payload"]
             payload_bytes = base64.b64decode(base64_payload)
             payload = json.loads(payload_bytes)
+            if err_detected:
+                raise ColoniesConnectionError(payload["message"])
         except requests.exceptions.ConnectionError as err:
             raise ColoniesConnectionError(err)
         except Exception as err:
