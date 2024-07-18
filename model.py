@@ -18,17 +18,11 @@ class Conditions(BaseModel):
     nodes: int = 0
     cpu: str = ""
     processes: int = 0
-    processes_per_node: int = Field(alias="processes-per-node", default=0)
+    processespernode: int = 0
     mem: str = ""
     storage: str = ""
     gpu: Gpu | None = Gpu()
     walltime: int = 0
-
-    def __init__(self, **data):
-        if 'processes_per_node' in data:
-            data['processes-per-node'] = data.pop('processes_per_node')
-        super().__init__(**data)
-
 
 class Fs(BaseModel):
     mount: str
