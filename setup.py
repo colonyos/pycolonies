@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pycolonies",
-    version="1.0.21",
+    version="1.0.22",
     author="Johan Kristiansson",
     author_email="johan.kristiansson@ri.se",
     description="Colonies Python SDK",
