@@ -10,31 +10,25 @@ Note that the SDK has only be tested on Linux and MacOS.
 pip3 install pycolonies
 ```
 
-The library assumes *libcryptolib.so* is installed in */usr/local/lib*. However, it is also possible to set the path to the cryptolib.so using an environmental variable.
-```bash
-export CRYPTOLIB=".../colonies/lib/cryptolib.so"
-```
-
-To install the Colonies cryptolib, type:
-```bash
-git clone git@github.com:colonyos/colonies.git
-cd colonies
-sudo make install
-```
-
 ## Starting a Colonies server
-You need to have access to a Colonies server. On Linux, run the commands below to start a server. See the [Colonies release page](https://github.com/colonyos/colonies/releases) for Windows and Mac binaries.
+You need to have access to a Colonies server. 
 
-```console
-git clone https://github.com/colonyos/colonies
-cd colonies
-source devenv
-./bin/colonies dev
-
-...
-INFO[0001] Successfully started Colonies development server
-INFO[0001] Press ctrl+c to exit
+```bash
+wget https://raw.githubusercontent.com/colonyos/colonies/main/docker-compose.env;
+source docker-compose.env;
+wget https://raw.githubusercontent.com/colonyos/colonies/main/docker-compose.yml;
+docker-compose up
 ```
+
+Press control-c to exit.
+
+To remove all data, type:
+
+```bash
+docker-compose down --volumes
+```
+
+See the [Colonies release page](https://github.com/colonyos/colonies/releases) for Windows and Mac binaries.
 
 ## Calling a function 
 To execute a function, a function specification must be submitted to the Colonies server. Colonies will then wrap the function specification in a process and assign the process to an Executor.
@@ -83,62 +77,73 @@ See [echo.py](https://github.com/colonyos/pycolonies/blob/main/examples/submit_e
 
 Now it possible to look up the process using the Colonies CLI.
 ```console
-colonies process get -p ea398af346db85f45b118bb77ecda9ae25f4700dcafcccb4ba3e4d40eba5205a 
+colonies process get -p fd20992e624aa27dac064ce6853556fc0f1fd68369ca219b0ff483be5c441e62
 
-Process:
-+--------------------+------------------------------------------------------------------+
-| ID                 | ea398af346db85f45b118bb77ecda9ae25f4700dcafcccb4ba3e4d40eba5205a |
-| IsAssigned         | False                                                            |
-| AssignedExecutorID | None                                                             |
-| State              | Waiting                                                          |
-| Priority           | 0                                                                |
-| SubmissionTime     | 2023-03-12 21:06:55                                              |
-| StartTime          | 0001-01-01 01:12:12                                              |
-| EndTime            | 0001-01-01 01:12:12                                              |
-| WaitDeadline       | 0001-01-01 01:12:12                                              |
-| ExecDeadline       | 0001-01-01 01:12:12                                              |
-| WaitingTime        | 29.587933822s                                                    |
-| ProcessingTime     | 0s                                                               |
-| Retries            | 0                                                                |
-| Errors             |                                                                  |
-| Output             |                                                                  |
-+--------------------+------------------------------------------------------------------+
+╭───────────────────────────────────────────────────────────────────────────────────────╮
+│ Process                                                                               │
+├────────────────────┬──────────────────────────────────────────────────────────────────┤
+│ Id                 │ fd20992e624aa27dac064ce6853556fc0f1fd68369ca219b0ff483be5c441e62 │
+│ IsAssigned         │ False                                                            │
+│ InitiatorID        │ 3fc05cf3df4b494e95d6a3d297a34f19938f7daa7422ab0d4f794454133341ac │
+│ Initiator          │ myuser                                                           │
+│ AssignedExecutorID │ None                                                             │
+│ AssignedExecutorID │ Waiting                                                          │
+│ PriorityTime       │ 1704037946987524185                                              │
+│ SubmissionTime     │ 2024-07-18 17:52:26                                              │
+│ StartTime          │ 2024-07-18 17:52:26                                              │
+│ EndTime            │ 2024-07-18 17:52:26                                              │
+│ WaitDeadline       │ 2024-07-18 17:54:06                                              │
+│ ExecDeadline       │ 0001-01-01 00:53:28                                              │
+│ WaitingTime        │ 34.060359471s                                                    │
+│ ProcessingTime     │ 0s                                                               │
+│ Retries            │ 0                                                                │
+│ Input              │                                                                  │
+│ Output             │                                                                  │
+│ Errors             │                                                                  │
+╰────────────────────┴──────────────────────────────────────────────────────────────────╯
+╭───────────────────────────╮
+│ Function Specification    │
+├─────────────┬─────────────┤
+│ Func        │ echo        │
+│ Args        │ helloworld  │
+│ KwArgs      │ None        │
+│ MaxWaitTime │ 100         │
+│ MaxExecTime │ 100         │
+│ MaxRetries  │ 3           │
+│ Label       │             │
+╰─────────────┴─────────────╯
+╭──────────────────────────────────╮
+│ Conditions                       │
+├──────────────────┬───────────────┤
+│ Colony           │ dev           │
+│ ExecutorNames    │ None          │
+│ ExecutorType     │ echo-executor │
+│ Dependencies     │               │
+│ Nodes            │ 0             │
+│ CPU              │ 0m            │
+│ Memory           │ 0Mi           │
+│ Processes        │ 0             │
+│ ProcessesPerNode │ 0             │
+│ Storage          │ 0Mi           │
+│ Walltime         │ 0             │
+│ GPUName          │               │
+│ GPUs             │ 0             │
+│ GPUPerNode       │ 0             │
+│ GPUMemory        │ 0Mi           │
+╰──────────────────┴───────────────╯
 
-FunctionSpec:
-+-------------+-------------+
-| Func        | echo        |
-| Args        | helloworld  |
-| MaxWaitTime | -1          |
-| MaxExecTime | -1          |
-| MaxRetries  | 0           |
-| Priority    | 0           |
-+-------------+-------------+
-
-Conditions:
-+--------------+------------------------------------------------------------------+
-| ColonyID     | 4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4 |
-| ExecutorIDs  | None                                                             |
-| ExecutorType | echo_executor                                                    |
-| Dependencies |                                                                  |
-+--------------+------------------------------------------------------------------+
-
-Attributes:
 No attributes found
 ```
 
 The command below shows all waiting processes. Note that the process is just enqueued since we don't yet have an Executor of the type *echo_executor*. 
 ```console
 colonies process psw
-INFO[0000] Starting a Colonies client                    Insecure=true ServerHost=localhost ServerPort=50080
-+------------------------------------------------------------------+------+------------+---------------------+---------------+
-|                                ID                                | FUNC |    ARGS    |   SUBMISSION TIME   | EXECUTOR TYPE |
-+------------------------------------------------------------------+------+------------+---------------------+---------------+
-| 4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4 | echo | helloworld | 2023-03-12 21:09:09 | echo_executor |
-+------------------------------------------------------------------+------+------------+---------------------+---------------+
-```
 
-```console
-python3 examples/echo.py
+╭──────────┬────────────┬────────┬─────────────────────┬───────────────┬───────────────┬───────────┬───────╮
+│ FUNCNAME │ ARGS       │ KWARGS │ SUBMSSION TIME      │ EXECUTOR NAME │ EXECUTOR TYPE │ INITIATOR │ LABEL │
+├──────────┼────────────┼────────┼─────────────────────┼───────────────┼───────────────┼───────────┼───────┤
+│ echo     │ helloworld │        │ 2024-07-18 17:52:26 │               │ echo-executor │ myuser    │       │
+╰──────────┴────────────┴────────┴─────────────────────┴───────────────┴───────────────┴───────────┴───────╯
 ```
 
 ## Implementing an Executor in Python
@@ -164,7 +169,7 @@ colonies.add_executor(executor, colony_prvkey)
 colonies.approve_executor(executorid, colony_prvkey)
 ```
 
-We also need to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. 
+*Optinally:* We also need to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. 
 
 ```python
 colonies.add_function(executorid, 
@@ -262,10 +267,10 @@ completed_process = colonies.wait(submitted_process, 100, executor_prvkey)
 
 The `wait()` function blocks until the submitted process is completed, either successful or failed.
 
-See [func_spec_example1.py](https://github.com/colonyos/pycolonies/blob/main/examples/func_spec_example1.py) and [python_executor.py](https://github.com/colonyos/pycolonies/blob/main/examples/python_executor.py) for a full example. Type the commands below to try it out. 
+See [func_spec_example1.py](https://github.com/colonyos/pycolonies/blob/main/examples/submit_python.py) and [python_executor.py](https://github.com/colonyos/pycolonies/blob/main/examples/python_executor.py) for a full example. Type the commands below to try it out. 
 
 ```console
-python3 examples/func_spec_example1.py
+python3 examples/submit_python.py
 
 Process df7cf3a54af88627ec45b525128ada2bd30c352d58f49f5a59c55fa04c781a8d submitted
 3
@@ -284,18 +289,32 @@ It is also possible to use the Colonies CLI to list registered functions:
 ```console
 colonies function ls
 
-Function:
-+-------------+-----------------+
-| FuncName    | sum_nums(n1,n2) |
-| Calls       | 8               |
-| Served by   | 1 executors     |
-| MinWaitTime | 0.009829 s      |
-| MaxWaitTime | 0.060579 s      |
-| AvgWaitTime | 0.053648 s      |
-| MinExecTime | 0.007275 s      |
-| MaxExecTime | 0.011074 s      |
-| AvgExecTime | 0.008911 s      |
-+-------------+-----------------+
+╭───────────────────────────────────╮
+│ Function: execute                 │
+├──────────────┬────────────────────┤
+│ ExecutorType │ container-executor │
+│ FunctionName │ execute            │
+│ Call counter │ 0                  │
+│ MinWaitTime  │ 0.000000 s         │
+│ MaxWaitTime  │ 0.000000 s         │
+│ AvgWaitTime  │ 0.000000 s         │
+│ MinExecTime  │ 0.000000 s         │
+│ MaxExecTime  │ 0.000000 s         │
+│ AvgExecTime  │ 0.000000 s         │
+╰──────────────┴────────────────────╯
+╭────────────────────────────────╮
+│ Function: sum_nums             │
+├──────────────┬─────────────────┤
+│ ExecutorType │ python-executor │
+│ FunctionName │ sum_nums        │
+│ Call counter │ 1               │
+│ MinWaitTime  │ 12.788976 s     │
+│ MaxWaitTime  │ 12.788976 s     │
+│ AvgWaitTime  │ 12.788976 s     │
+│ MinExecTime  │ 0.022253 s      │
+│ MaxExecTime  │ 0.022253 s      │
+│ AvgExecTime  │ 0.022253 s      │
+╰──────────────┴─────────────────╯
 ```
 
 # Workflows
