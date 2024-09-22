@@ -549,7 +549,7 @@ class TestColonies(unittest.TestCase):
         assert len(files) == 1
 
         self.colonies.del_colony(colonyname, self.server_prv)
-    
+
     def test_upload_file(self):
         _, _, colonyname, colony_prvkey = self.add_test_colony()
         _, _, executorname, executor_prvkey = self.add_test_executor(
@@ -576,7 +576,7 @@ class TestColonies(unittest.TestCase):
         self.assertEqual(hello, "hello\n")
 
         self.colonies.del_colony(colonyname, self.server_prv)
-    
+
     def test_upload_data(self):
         _, _, colonyname, colony_prvkey = self.add_test_colony()
         _, _, executorname, executor_prvkey = self.add_test_executor(
@@ -592,7 +592,7 @@ class TestColonies(unittest.TestCase):
         assert data_str == "testdata"
 
         self.colonies.del_colony(colonyname, self.server_prv)
-    
+
     def test_get_file(self):
         _, _, colonyname, colony_prvkey = self.add_test_colony()
         _, _, executorname, executor_prvkey = self.add_test_executor(
@@ -606,6 +606,58 @@ class TestColonies(unittest.TestCase):
         file = self.colonies.get_file(colonyname, executor_prvkey, label="/testdata", filename="data") 
         assert len(file) == 1
         assert file[0]["name"] == "data"
+
+        self.colonies.del_colony(colonyname, self.server_prv)
+    
+    def test_add_cron(self):
+        _, _, colonyname, colony_prvkey = self.add_test_colony()
+        _, _, executorname, executor_prvkey = self.add_test_executor(
+            colonyname, colony_prvkey
+        )
+        self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
+        workflow = Workflow(
+            colonyname=colonyname,
+            functionspecs=[
+                FuncSpec(
+                    nodename="node1",
+                    conditions=Conditions(
+                        colonyname=colonyname, executortype="test-executor-type"
+                    ),
+                    env={"test_key": "test_value2"},
+                    maxexectime=-1,
+                    maxretries=3,
+                ),
+                FuncSpec(
+                    nodename="node2",
+                    conditions=Conditions(
+                        colonyname=colonyname,
+                        executortype="test-executor-type",
+                        dependencies=["node1"],
+                    ),
+                    env={"test_key": "test_value2"},
+                    maxexectime=-1,
+                    maxretries=3,
+                ),
+            ],
+        )
+        name = "test_cron" + self.ran_prefix()
+        cron = self.colonies.add_cron(name, "0/1 * * * * *", True, workflow, colonyname, executor_prvkey)
+
+        assert cron["name"] == name 
+
+        cron2 = self.colonies.get_cron(cron["cronid"], executor_prvkey)
+        assert cron2["name"] == name 
+        
+        name = "test_cron" + self.ran_prefix()
+        cron = self.colonies.add_cron(name, "0/1 * * * * *", False, workflow, colonyname, executor_prvkey)
+
+        crons = self.colonies.get_crons(colonyname, 10, executor_prvkey)
+        assert len(crons) == 2
+
+        self.colonies.del_cron(cron["cronid"], executor_prvkey)
+        
+        crons = self.colonies.get_crons(colonyname, 10, executor_prvkey)
+        assert len(crons) == 1 
 
         self.colonies.del_colony(colonyname, self.server_prv)
 

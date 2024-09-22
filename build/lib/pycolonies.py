@@ -489,6 +489,47 @@ class Colonies:
             "label": label
         }
         return self.__rpc(msg, prvkey)
+    
+    def add_cron(self, cronname, cronexpr, wait, workflow: Workflow, colonyname, prvkey):
+        workflowspec_str = json.dumps(workflow.model_dump(by_alias=True))
+        workflowspec_str = workflowspec_str.replace('"', '\"')
+        cron = {
+                "name": cronname,
+                "colonyname": colonyname,
+                "interval": -1,
+                "waitforprevprocessgrap": wait,
+                "cronexpression": cronexpr,
+                "workflowspec": workflowspec_str
+               }
+
+        msg = {
+                "msgtype": "addcronmsg",
+                "cron": cron
+            }
+        return self.__rpc(msg, prvkey)
+    
+    def get_cron(self, cronid, prvkey):
+        msg = {
+                "msgtype": "getcronmsg",
+                "cronid": cronid
+            }
+        return self.__rpc(msg, prvkey)
+    
+    def get_crons(self, colonyname, count, prvkey):
+        msg = {
+                "msgtype": "getcronsmsg",
+                "colonyname": colonyname,
+                "count": count
+            }
+        return self.__rpc(msg, prvkey)
+    
+    def del_cron(self, cronid, prvkey):
+        msg = {
+                "msgtype": "removecronmsg",
+                "all": False,
+                "cronid": cronid
+            }
+        return self.__rpc(msg, prvkey)
 
     def __generate_random_id(self):
         random_uuid = uuid.uuid4()
