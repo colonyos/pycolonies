@@ -661,5 +661,11 @@ class TestColonies(unittest.TestCase):
 
         self.colonies.del_colony(colonyname, self.server_prv)
 
+    def test_download_file_raise_value_error_for_conflicting_parameters(self):
+        with self.assertRaises(ValueError) as err:
+            self.colonies.download_file("test", "prvkey", fileid="123", filename="filename")
+        
+        self.assertEqual("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.", str(err.exception))
+
 if __name__ == "__main__":
     unittest.main()
