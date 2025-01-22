@@ -8,7 +8,8 @@ class TestFuncSpec(unittest.TestCase):
 
         kwargs = {
             "one": "1",
-            "two": "2"
+            "two": "2",
+            "three": ["3", "4"]
         }
 
         spec = func_spec(

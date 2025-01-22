@@ -34,7 +34,7 @@ class FuncSpec(BaseModel):
     nodename: str = ""
     funcname: str = ""
     args: List[str | int] = []
-    kwargs: Dict[str, str] | None = {}
+    kwargs: Dict[str, str | List[str]] | None = {}
     priority: int = 0
     maxwaittime: int = 0
     maxexectime: int = 0
