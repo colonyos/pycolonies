@@ -8,13 +8,14 @@ from pycolonies import Colonies
 from model import FuncSpec, Conditions, Workflow
 import os
 
+test_colony_host = os.environ.get('TEST_COLONY_HOST', 'localhost')
+test_colony_prvkey = os.environ.get('TEST_COLONY_PRVKEY', 'fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d')
+
 class TestColonies(unittest.TestCase):
     def setUp(self):
-        self.colonies = Colonies("localhost", 50080, tls=False, native_crypto=False)
+        self.colonies = Colonies(test_colony_host, 50080, tls=False, native_crypto=False)
         self.crypto = Crypto(native=False)
-        self.server_prv = (
-            "fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d"
-        )
+        self.server_prv = test_colony_prvkey
 
     def ran_prefix(self):
         return "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
