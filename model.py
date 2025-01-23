@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from typing import List, Dict, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 class Gpu(BaseModel):
     name: str = ""
@@ -152,7 +152,7 @@ class File(BaseModel):
     ref: Reference = Field(..., alias="ref")
     added: Optional[datetime] = Field(None, alias="added")
 
-    @validator('label')
+    @field_validator('label')
     def ensure_single_slash(cls, v):
         if not v.startswith('/'):
             v = '/' + v
