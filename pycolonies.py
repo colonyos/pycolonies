@@ -689,7 +689,7 @@ class Colonies:
     
     def get_file(self, colonyname, prvkey, label=None, fileid=None, filename=None, latest=True):
         if fileid is not None and filename is not None:
-            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+            raise ValueError("Both 'fileid' and 'filename' cannot be set at the same time. Please provide only one.")
         
         msg = {
             "msgtype": "getfilemsg",
@@ -716,7 +716,7 @@ class Colonies:
     
     def download_file(self, colonyname, prvkey,  dst=None, label=None, fileid=None, filename=None, latest=True):
         if fileid is not None and filename is not None:
-            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+            raise ValueError("Both 'fileid' and 'filename' cannot be set at the same time. Please provide only one.")
         
         access_key = os.getenv("AWS_S3_ACCESSKEY")
         secret_key = os.getenv("AWS_S3_SECRETKEY")
@@ -769,8 +769,8 @@ class Colonies:
             raise e
 
     def download_data(self, colonyname, prvkey, label=None, fileid=None, filename=None, latest=True):
-        if fileid is not None and name is not None:
-            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+        if fileid is not None and filename is not None:
+            raise ValueError("Both 'fileid' and 'filename' cannot be set at the same time. Please provide only one.")
         
         access_key = os.getenv("AWS_S3_ACCESSKEY")
         secret_key = os.getenv("AWS_S3_SECRETKEY")
