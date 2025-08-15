@@ -1,4 +1,3 @@
-from pycolonies import func_spec
 from pycolonies import colonies_client
 
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field, field_validator
 
 class Gpu(BaseModel):
@@ -46,10 +46,14 @@ class FuncSpec(BaseModel):
 
 
 class Attribute(BaseModel):
+    id: str = Field(..., alias="attributeid")
+    targetid: str
+    targetcolonyname: str = Field(..., alias="targetcolonyname")
+    targetprocessgraphid: str = Field(..., alias="targetprocessgraphid")
+    state: int
+    attributetype: int
     key: str
     value: str
-    targetid: str
-    attributetype: int
 
 
 class Process(BaseModel):
@@ -76,7 +80,7 @@ class Process(BaseModel):
     output: List[str | int | float] | None = Field(alias="out")
     errors: List[str]
     
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         if 'input' in data:
             data['in'] = data.pop('input')
         if 'output' in data:
@@ -150,7 +154,7 @@ class File(BaseModel):
     checksum: str = Field(..., alias="checksum")
     checksumalg: str = Field(..., alias="checksumalg")
     ref: Reference = Field(..., alias="ref")
-    added: Optional[datetime] = Field(None, alias="added")
+    added: Optional[datetime] = Field(default=None, alias="added")
 
     @field_validator('label')
     def ensure_single_slash(cls, v):
@@ -158,3 +162,136 @@ class File(BaseModel):
             v = '/' + v
         v = '/' + v.strip('/')
         return v
+
+
+class FileData(BaseModel):
+    name: str
+    checksum: str
+    size: int
+    s3filename: str
+
+
+class Cron(BaseModel):
+    cronid: str
+    initiatorid: str
+    initiatorname: str
+    colonyname: str
+    name: str
+    cronexpression: str
+    interval: int
+    random: bool
+    nextrun: datetime
+    lastrun: datetime
+    workflowspec: str
+    prevprocessgraphid: str
+    waitforprevprocessgraph: bool
+    checkerperiod: int
+
+
+class Log(BaseModel):
+    processid: str
+    colonyname: str
+    executorname: str
+    message: str
+    timestamp: int
+
+
+class Location(BaseModel):
+    long: float
+    lat: float
+    desc: str
+
+
+class Hardware(BaseModel):
+    model: str
+    nodes: int
+    cpu: str
+    mem: str
+    storage: str
+    gpu: Gpu
+
+
+class Software(BaseModel):
+    name: str
+    type: str
+    version: str
+
+
+class Capabilities(BaseModel):
+    hardware: Hardware
+    software: Software
+
+
+class Allocations(BaseModel):
+    projects: Dict[str, Any]
+
+
+class Executor(BaseModel):
+    executorid: str
+    executortype: str
+    name: str = Field(..., alias="executorname")
+    colonyname: str
+    state: int
+    requirefuncreg: bool
+    commissiontime: datetime
+    lastheardfromtime: datetime
+    location: Location
+    capabilities: Capabilities
+    allocations: Allocations
+
+
+class Colony(BaseModel):
+    colonyid: str
+    name: str
+
+
+class Statistics(BaseModel):
+    colonies: int
+    executors: int
+    waitingprocesses: int
+    runningprocesses: int
+    successfulprocesses: int
+    failedprocesses: int
+    waitingworkflows: int
+    runningworkflows: int
+    successfulworkflows: int
+    failedworkflows: int
+
+
+class Function(BaseModel):
+    functionid: str
+    executorname: str
+    executortype: str
+    colonyname: str
+    funcname: str
+    counter: int
+    minwaittime: float
+    maxwaittime: float
+    minexectime: float
+    maxexectime: float
+    avgwaittime: float
+    avgexectime: float
+
+
+class Snapshot(BaseModel):
+    snapshotid: str
+    colonyname: str
+    label: str
+    name: str
+    fileids: List[str]
+    added: datetime
+
+
+class Generator(BaseModel):
+    generatorid: str
+    initiatorid: str
+    initiatorname: str
+    colonyname: str
+    name: str
+    workflowspec: str
+    trigger: int
+    checksomeneeded: bool
+    lastchecksum: str
+    checkerperiod: int
+    timeout: int
+    added: datetime

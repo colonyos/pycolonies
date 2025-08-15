@@ -22,7 +22,7 @@ G: Tuple[int, int] = (Gx, Gy)
 P: int = 2**256 - 2**32 - 977
 
 class Crypto:
-      def __init__(self, native=False):
+      def __init__(self, native: bool = False) -> None:
           self.native = native
           if native:
             libname = os.environ.get("CRYPTOLIB")
@@ -35,35 +35,35 @@ class Crypto:
             self.c_lib.hash.restype = ctypes.c_char_p
             self.c_lib.recoverid.restype = ctypes.c_char_p
 
-      def prvkey(self):
+      def prvkey(self) -> str:
           if self.native:
             k = self.c_lib.prvkey()
             return k.decode("utf-8")
           else:
             return genkey()
 
-      def id(self, id):
+      def id(self, id: str) -> str:
           if self.native:
               h = self.c_lib.id(id.encode('utf-8'))
               return h.decode("utf-8")
           else:
               return get_id(id)
 
-      def sign(self, data, prvkey):
+      def sign(self, data: str, prvkey: str) -> str:
           if self.native:
               s = self.c_lib.sign(data.encode('utf-8'), prvkey.encode('utf-8'))
               return s.decode("utf-8")
           else:
               return sign(data, prvkey)
 
-def genkey():
+def genkey() -> str:
     random_bytes = os.urandom(32)  # Generate 32 random bytes
     hash_obj = hashlib.sha3_256()  # Create a SHA-3 256 hash object
     hash_obj.update(random_bytes)  # Update the hash object with the random bytes
     hash_bytes = hash_obj.digest()  # Get the digest of the hash
     return hash_bytes.hex()  # Return the hexadecimal representation
 
-def sign(msg, prv_hex):
+def sign(msg: str, prv_hex: str) -> str:
     prv_bytes = bytes.fromhex(prv_hex)
     
     hash = hashlib.sha3_256()
@@ -79,7 +79,7 @@ def sign(msg, prv_hex):
     sig_hex = sig.hex()
     return sig_hex
 
-def get_id(prv_key):
+def get_id(prv_key: str) -> str:
     prv_key_bytes = bytes.fromhex(prv_key)
     pub = private_key_to_public_key(prv_key_bytes)
     pub_hex = "04"+pub.hex()  # the prefix "04" denotes that the public key is in uncompressed format

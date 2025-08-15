@@ -1,12 +1,11 @@
-import random
+from typing import List
 
 from pycolonies import colonies_client
-from pycolonies import func_spec
 from model import Workflow, FuncSpec, Conditions, Gpu
 
 colonies, colonyname, colony_prvkey, executorid, executor_prvkey = colonies_client()
 
-def gen_sleep(executorname, nodename, dependencies):
+def gen_sleep(executorname: str, nodename: str, dependencies: List[str]) -> FuncSpec:
     return FuncSpec (
         conditions=Conditions(
             executortype="container-executor",
@@ -14,7 +13,7 @@ def gen_sleep(executorname, nodename, dependencies):
                 executorname
             ],
             nodes=1,
-            processes_per_node=1,
+            processespernode=1,
             mem="500Mi",
             cpu="1000m",
             gpu=Gpu(

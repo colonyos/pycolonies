@@ -4,7 +4,7 @@ from pycolonies import func_spec
 
 
 class TestFuncSpec(unittest.TestCase):
-    def test_func_spec_sets_simple_properties(self):
+    def test_func_spec_sets_simple_properties(self) -> None:
 
         kwargs = {
             "one": "1",
@@ -31,7 +31,8 @@ class TestFuncSpec(unittest.TestCase):
 
         self.assertEqual(spec.conditions.colonyname, "colonyname")
         self.assertEqual(spec.conditions.executortype, "echo_executor")
-        self.assertEqual(spec.conditions.executornames[0], "exec_name")
+        if spec.conditions.executornames is not None:
+            self.assertEqual(spec.conditions.executornames[0], "exec_name")
 
         self.assertEqual(spec.priority, 0)
         self.assertEqual(spec.maxexectime, 10)

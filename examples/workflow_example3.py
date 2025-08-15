@@ -1,10 +1,11 @@
 from pycolonies import colonies_client
 from pycolonies import func_spec
 from pycolonies import Workflow
+from typing import Dict, Any
 
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()
 
-def map(ctx={}):
+def map(ctx: Dict[str, Any] = {}) -> None:
     code = """def gen_nums(ctx={}):
                 return 1, 2""" 
     processgraphid = ctx["process"].processgraphid
@@ -14,6 +15,8 @@ def map(ctx={}):
     processgraph = colonies.get_processgraph(processgraphid, executor_prvkey)
 
     reduce_process = colonies.find_process("reduce", processgraph.processids, executor_prvkey)
+    if reduce_process is None:
+        raise RuntimeError("Could not find reduce process")
     reduce_processid = reduce_process.processid
 
     insert = True
@@ -33,7 +36,7 @@ def map(ctx={}):
 
         insert = False
 
-def reduce(*nums, ctx={}):
+def reduce(*nums: int, ctx: Dict[str, Any] = {}) -> int:
     print("REDUCED CALLED")
     total = 0
     for n in nums:
@@ -70,5 +73,7 @@ print("Workflow", processgraph.processgraphid, "submitted")
 
 # wait for the sum_list process
 process = colonies.find_process("reduce", processgraph.processids, prvkey)
-process = colonies.wait(process, 1000, prvkey)
-print(process.output[0])
+if process:
+    completed_process = colonies.wait(process, 1000, prvkey)
+    if completed_process and completed_process.output:
+        print(completed_process.output[0])

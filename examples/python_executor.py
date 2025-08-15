@@ -7,9 +7,10 @@ import base64
 import os
 import uuid
 import sys
+from typing import Any, List
 
 class PythonExecutor:
-    def __init__(self):
+    def __init__(self) -> None:
         global colonies
         colonies, colonyname, colony_prvkey, _, _ = colonies_client()
         crypto = Crypto()
@@ -23,7 +24,7 @@ class PythonExecutor:
 
         self.register()
         
-    def register(self):
+    def register(self) -> None:
         executor = {
             "executorname": self.executorname,
             "executorid": self.executorid,
@@ -40,7 +41,7 @@ class PythonExecutor:
         
         print("Executor", self.executorname, "registered")
    
-    def start(self):
+    def start(self) -> None:
         while (True):
             try:
                 # try to get a process from the colonies server, the call will block for max 10 seconds
@@ -68,6 +69,7 @@ class PythonExecutor:
                 except Exception as err:
                     print(err)
 
+                args: List[Any] = []
                 try:
                     # if "input" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
@@ -111,12 +113,12 @@ class PythonExecutor:
             except Exception as err:
                 pass
 
-    def unregister(self):
+    def unregister(self) -> None:
         self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
         print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
-def sigint_handler(signum, frame):
+def sigint_handler(signum: int, frame: Any) -> None:
     executor.unregister()
 
 if __name__ == '__main__':

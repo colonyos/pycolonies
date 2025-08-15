@@ -1,13 +1,14 @@
 from pycolonies import colonies_client
 from pycolonies import func_spec
 from pycolonies import Workflow
+from typing import Dict, Tuple, Any
 
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()
 
-def gen_nums(ctx={}):
+def gen_nums(ctx: Dict[str, Any] = {}) -> Tuple[int, int]:
     return 1, 2 
 
-def reduce(*nums, ctx={}):
+def reduce(*nums: int, ctx: Dict[str, Any] = {}) -> int:
     total = 0
     for n in nums:
         total += n
@@ -55,5 +56,7 @@ print("Workflow", processgraph.processgraphid, "submitted")
 
 # wait for the sum_list process
 process = colonies.find_process("reduce", processgraph.processids, prvkey)
-process = colonies.wait(process, 100, prvkey)
-print(process.output[0])
+if process:
+    completed_process = colonies.wait(process, 100, prvkey)
+    if completed_process and completed_process.output:
+        print(completed_process.output[0])

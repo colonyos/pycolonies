@@ -1,10 +1,11 @@
 from pycolonies import colonies_client
-from pycolonies import Workflow, FuncSpec, Conditions, Gpu
+from pycolonies import Workflow, FuncSpec, Conditions
+from model import Gpu
 import time
 
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()
 
-wf = Workflow(colonyname=colonyname)
+wf = Workflow(colonyname=colonyname or "cron")
 f = FuncSpec(
     funcname="execute",
     kwargs={
@@ -31,20 +32,20 @@ wf.functionspecs.append(f)
 
 # Add a cron
 cron = colonies.add_cron("echo_cron", "0/1 * * * * *", True, wf, colonyname, prvkey)
-print("Adding new cron with id: ", cron["cronid"])
+print("Adding new cron with id: ", cron.cronid)
 
 # List all crons, max 10 cron are listed
 crons = colonies.get_crons(colonyname, 10, prvkey)
 
 for cron in crons:
-    print(cron["cronid"])
+    print(cron.cronid)
 
 # Get a cron by id
-cron = colonies.get_cron(cron["cronid"], prvkey)
-print(cron["cronid"])
+cron = colonies.get_cron(cron.cronid, prvkey)
+print(cron.cronid)
 
 # Sleep for 2 seconds to allow the cron to run
 time.sleep(2)
 
 # Delete a cron by id
-colonies.del_cron(cron["cronid"], prvkey)
+colonies.del_cron(cron.cronid, prvkey)

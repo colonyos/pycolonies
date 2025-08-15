@@ -18,4 +18,5 @@ print("Process", process.processid, "submitted")
 
 # wait for the process to be executed
 process = colonies.wait(process, 10, prvkey)
-print(process.output[0])
+if process and process.output:
+    print(process.output[0])
