@@ -21,10 +21,7 @@ def colonies_client(native_crypto=False):
     executorname = os.getenv("COLONIES_EXECUTOR_NAME")
     prvkey = os.getenv("COLONIES_PRVKEY")
 
-    if colonies_tls == "true":
-        client = Colonies(colonies_server, int(colonies_port), True, native_crypto=native_crypto)
-    else:
-        client = Colonies(colonies_server, int(colonies_port), False, native_crypto=native_crypto)
+    client = Colonies(colonies_server, int(colonies_port), colonies_tls == "true", native_crypto=native_crypto)
 
     return client, colonyname, colony_prvkey, executorname, prvkey
 
@@ -96,20 +93,14 @@ class Colonies:
     RUNNING = 1
     SUCCESSFUL = 2
     FAILED = 3
-    
+
     def __init__(self, host, port, tls=False, native_crypto=False):
+        self.host = host
+        self.port = port
         self.native_crypto = native_crypto
-        if tls:
-            self.url = "https://" + host + ":" + str(port) + "/api"
-            self.host = host
-            self.port = port
-            self.tls = True
-        else:
-            self.url = "http://" + host + ":" + str(port) + "/api"
-            self.host = host
-            self.port = port
-            self.tls = False 
-    
+        self.tls = tls
+        self.url = ("https://" if self.tls else "http://") + self.host + ":" + str(self.port) + "/api"
+
     def __rpc(self, msg, prvkey):
         payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
         crypto = Crypto(native=self.native_crypto)
