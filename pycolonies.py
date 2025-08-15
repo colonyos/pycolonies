@@ -528,6 +528,55 @@ class Colonies:
             }
         return self.__rpc(msg, prvkey)
 
+    def run_cron(self, cronid, prvkey):
+        msg = {
+            "msgtype": "runcronmsg",
+            "cronid": cronid
+        }
+        return self.__rpc(msg, prvkey)
+
+    def resolve_generator_by_name(self, colonyname, generatorname, prvkey):
+        msg = {
+            "msgtype": "resolvegeneratormsg",
+            "colonyname": colonyname,
+            "generatorname": generatorname
+        }
+        return self.__rpc(msg, prvkey)
+
+    def change_colony_id(self, colonyname, new_colony_id, prvkey):
+        msg = {
+            "msgtype": "changecolonyidmsg",
+            "colonyname": colonyname,
+            "colonyid": new_colony_id
+        }
+        self.__rpc(msg, prvkey)
+
+    def change_executor_id(self, colonyname, new_executor_id, prvkey):
+        msg = {
+            "msgtype": "changeexecutoridmsg",
+            "colonyname": colonyname,
+            "executorid": new_executor_id
+        }
+        self.__rpc(msg, prvkey)
+
+    def change_user_id(self, colonyname, new_user_id, prvkey):
+        msg = {
+            "msgtype": "changeuseridmsg",
+            "colonyname": colonyname,
+            "userid": new_user_id
+        }
+        self.__rpc(msg, prvkey)
+
+    def change_server_id(self, new_server_id, prvkey):
+        """
+        Changes the ID of the server. Requires server owner credentials.
+        """
+        msg = {
+            "msgtype": "changeserveridmsg",
+            "serverid": new_server_id
+        }
+        self.__rpc(msg, prvkey)
+
     def __generate_random_id(self):
         random_uuid = uuid.uuid4()
         hasher = hashlib.sha256()
