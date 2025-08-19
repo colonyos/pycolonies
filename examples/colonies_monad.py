@@ -49,6 +49,7 @@ class ColoniesMonad:
             self.prev_func = f.name
         else:
             fs = copy.deepcopy(f.func_spec)
+            assert fs.conditions, "FunctionSpec must have conditions defined."
             fs.conditions.dependencies = [self.prev_func]
             self.wf.functionspecs.append(fs)
             self.prev_func = f.name

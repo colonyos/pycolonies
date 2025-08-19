@@ -24,30 +24,30 @@ class TestColonies(unittest.TestCase):
     def add_test_colony(self) -> Tuple[Colony, str, str, str]:
         colony_prvkey = self.crypto.prvkey()
         colonyid = self.crypto.id(colony_prvkey)
-        colony = {"colonyid": colonyid, "name": "python-test-" + self.ran_prefix()}
+        colony = Colony(colonyid=colonyid, name="python-test-" + self.ran_prefix())
 
         return (
             self.colonies.add_colony(colony, self.server_prv),
             colonyid,
-            colony["name"],
+            colony.name,
             colony_prvkey,
         )
 
     def add_test_executor(self, colonyname: str, colony_prvkey: str) -> Tuple[Executor, str, str, str]:
         executor_prvkey = self.crypto.prvkey()
         executorid = self.crypto.id(executor_prvkey)
-
-        executor = {
-            "executorname": "test-executor-" + self.ran_prefix(),
-            "executorid": executorid,
-            "colonyname": colonyname,
-            "executortype": "test-executor-type",
-        }
+        executorname = "test-executor-" + self.ran_prefix()
 
         return (
-            self.colonies.add_executor(executor, colony_prvkey),
-            executor["executorid"],
-            executor["executorname"],
+            self.colonies.add_executor(
+                executorid=executorid,
+                executorname=executorname,
+                colonyname=colonyname,
+                executortype="test-executor-type",
+                colony_prvkey=colony_prvkey
+            ),
+            executorid,
+            executorname,
             executor_prvkey,
         )
 

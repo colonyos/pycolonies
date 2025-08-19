@@ -125,15 +125,14 @@ class PythonExecutor:
             print(err)
         
     def register(self) -> None:
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                self.executorid,
+                self.executorname,
+                self.executortype,
+                self.colonyname,
+                self.colony_prvkey
+            )
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)

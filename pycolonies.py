@@ -1,17 +1,23 @@
 import requests
 import json
-from typing import List, Dict, Optional, Callable, Any
-from model import Attribute, Process, FuncSpec, Workflow, ProcessGraph, Conditions, S3Object, Reference, File, Fs, FileData, Cron, Log, Executor, Colony, Statistics, Function, Snapshot, Allocations, Generator
+from typing import List, Dict, Optional, Callable, Any, TypeVar, Type
+from pydantic import TypeAdapter, ValidationError
 import base64
 from websocket import create_connection
 import inspect
 import os
 import ctypes
-from crypto import Crypto
 import boto3
 import hashlib
 import uuid
 from botocore.exceptions import ClientError
+
+from crypto import Crypto
+import rpc
+from model import (
+    Attribute, Empty, Process, FuncSpec, Workflow, ProcessGraph, S3Object, Reference, File, FileData, Cron, Log, Executor, Colony, 
+    Statistics, Function, Snapshot, Allocations, Generator
+)
 
 def colonies_client(native_crypto=False) -> tuple['Colonies', str, str, str, str]:
     colonies_server = os.getenv("COLONIES_SERVER_HOST")
@@ -35,6 +41,8 @@ def colonies_client(native_crypto=False) -> tuple['Colonies', str, str, str, str
     client = Colonies(colonies_server, int(colonies_port), colonies_tls == "true", native_crypto=native_crypto)
 
     return client, colonyname, colony_prvkey, executorname, prvkey
+
+T = TypeVar('T')
 
 class ColoniesConnectionError(Exception):
     pass
@@ -131,352 +139,232 @@ class Colonies:
         self.tls = tls
         self.url = ("https://" if self.tls else "http://") + self.host + ":" + str(self.port) + "/api"
 
-    def __rpc(self, msg: Dict[str, Any], prvkey: str) -> Dict[str, Any] | List[Any]:
-        payload = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
+    def __rpc(
+        self,
+        request_payload: rpc.RequestPayload,
+        prvkey: str,
+        response_payload_type: Type[T]
+    ) -> T:
+        request_payload_json = request_payload.model_dump_json(by_alias=True)
+        request_payload_b64 = str(base64.b64encode(request_payload_json.encode('utf-8')), "utf-8")
         crypto = Crypto(native=self.native_crypto)
-        signature = crypto.sign(payload, prvkey)
+        signature = crypto.sign(request_payload_b64, prvkey)
 
-        rpc = {
-            "payloadtype" : msg["msgtype"],
-            "payload" : payload,
-            "signature" : signature
-        }
+        request = rpc.Request(
+            payloadtype=request_payload.msgtype,
+            payload=request_payload_b64,
+            signature=signature
+        )
 
-        rpc_json = json.dumps(rpc)
+        request_json = request.model_dump_json()
+
         try:
-            reply = requests.post(url = self.url, data=rpc_json, verify=True)
+            http_response = requests.post(url = self.url, data=request_json, verify=True)
+            http_response.raise_for_status()
+            response = rpc.Response.model_validate_json(http_response.content)
+            response_payload_json = base64.b64decode(response.payload)
+            if response.payloadtype == "error":
+                error_payload = rpc.ErrorResponse.model_validate_json(response_payload_json)
+                raise ColoniesConnectionError(error_payload.message)
+            return TypeAdapter(response_payload_type).validate_json(response_payload_json)
+        except requests.exceptions.RequestException as err:
+            raise ColoniesConnectionError(f"Network request failed: {err}") from err
+        except ValidationError as err:
+            raise ColoniesError(f"API response validation failed: {err}") from err
+        except UnicodeDecodeError as err:
+            raise ColoniesError(f"Failed to decode response payload: {err}") from err
 
-            reply_msg_json = json.loads(reply.content)
-            err_detected = False
-            if reply_msg_json.get("error", False):
-                err_detected = True
-            base64_payload = reply_msg_json["payload"]
-            payload_bytes = base64.b64decode(base64_payload)
-            payload = json.loads(payload_bytes)
-            if err_detected:
-                raise ColoniesConnectionError(payload["message"])
-        except requests.exceptions.ConnectionError as err:
-            raise ColoniesConnectionError(err)
-        except Exception as err:
-            raise ColoniesConnectionError(err)
+    def wait(self, process: Process, timeout: int, executor_prvkey: str) -> Process:
+        state = Colonies.SUCCESSFUL
+        if not process.spec.conditions:
+            raise ValueError("Process must have conditions set")
+        if not process.spec.conditions.colonyname:
+            raise ValueError("Process must have a colony name set in its conditions")
+        payload = rpc.SubscribeProcess(
+            processid=process.processid,
+            executortype=process.spec.conditions.executortype,
+            state=state,
+            timeout=timeout,
+            colonyname=process.spec.conditions.colonyname,
+        )
 
-        if reply.status_code == 200:
-            return payload
-        else:
-            raise ColoniesError(payload["message"])
+        payload_dict = payload.model_dump(by_alias=True)
+        payload_b64 = str(base64.b64encode(json.dumps(payload_dict).encode('utf-8')), "utf-8")
+        request = rpc.Request(payloadtype=payload.msgtype, payload=payload_b64, signature="")
 
-    def wait(self, process: Process, timeout, prvkey) -> Process:
-        state = 2
-        msg = {
-            "processid": process.processid,
-            "executortype": process.spec.conditions.executortype,
-            "state": state,
-            "timeout": timeout,
-            "colonyname": process.spec.conditions.colonyname,
-            "msgtype": "subscribeprocessmsg"
-        }
-
-        rpcmsg = {
-            "payloadtype": msg["msgtype"],
-            "payload": "",
-            "signature": ""
-        }
-
-        rpcmsg["payload"] = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
         crypto = Crypto()
-        rpcmsg["signature"] = crypto.sign(rpcmsg["payload"], prvkey)
+        request.signature = crypto.sign(request.payload, executor_prvkey)
 
-        if self.tls:
-            ws = create_connection("wss://" + self.host + ":" + str(self.port) + "/pubsub")
-        else:
-            ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
-        ws.send(json.dumps(rpcmsg))
+        ws = create_connection(("wss://" if self.tls else "ws://") + self.host + ":" + str(self.port) + "/pubsub")
+        ws.send(request.model_dump_json())
         ws.recv()
         ws.close()
 
-        return self.get_process(process.processid, prvkey)
+        return self.get_process(process.processid, executor_prvkey)
 
-    def add_colony(self, colony: Dict[str, str], prvkey: str) -> Colony:
-        msg = {
-            "msgtype": "addcolonymsg",
-            "colony": colony
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Colony(**response)
+    def add_colony(self, colony: Colony, server_prvkey: str) -> Colony:
+        payload = rpc.AddColony(colony=colony)
+        return self.__rpc(payload, server_prvkey, Colony)
 
-    def del_colony(self, colonyname: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "removecolonymsg",
-            "colonyname": colonyname
-        }
-        self.__rpc(msg, prvkey)
+    def del_colony(self, colonyname: str, server_prvkey: str) -> None:
+        payload = rpc.RemoveColony(colonyname=colonyname)
+        self.__rpc(payload, server_prvkey, Colony)
 
-    def list_colonies(self, prvkey: str) -> List[Colony]:
-        msg = {
-            "msgtype": "getcoloniesmsg",
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Colony(**item) for item in response]
+    def list_colonies(self, server_prvkey: str) -> List[Colony]:
+        payload = rpc.GetColonies()
+        return self.__rpc(payload, server_prvkey, List[Colony])
 
-    def get_colony(self, colonyname: str, prvkey: str) -> Colony:
-        msg = {
-            "msgtype": "getcolonymsg",
-            "colonyname": colonyname
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Colony(**response)
+    def get_colony(self, colonyname: str, server_prvkey: str) -> Colony:
+        payload = rpc.GetColony(colonyname=colonyname)
+        return self.__rpc(payload, server_prvkey, Colony)
 
-    def add_executor(self, executor: Dict[str, str], prvkey: str) -> Executor:
-        msg = {
-            "msgtype": "addexecutormsg",
-            "executor": executor
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Executor(**response)
+    def add_executor(
+        self,
+        executorid: str,
+        executorname: str,
+        executortype: str,
+        colonyname: str,
+        colony_prvkey: str,
+        capabilities: Optional[rpc.Capabilities] = None
+    ) -> Executor:
+        payload = rpc.Executor(
+            executorid=executorid,
+            executortype=executortype,
+            executorname=executorname,
+            colonyname=colonyname,
+            capabilities=capabilities
+        )
+        payload = rpc.AddExecutor(executor=payload)
+        return self.__rpc(payload, colony_prvkey, Executor)
 
-    def report_allocation(self, colonyname: str, executorname: str, allocations: Allocations, prvkey: str) -> None:
+    def report_allocation(self, colonyname: str, executorname: str, allocations: Allocations, executor_prvkey: str) -> None:
         """
         Reports resource allocations for an executor.
         """
-        msg = {
-            "msgtype": "reportallocationmsg",
-            "colonyname": colonyname,
-            "executorname": executorname,
-            "allocations": allocations.model_dump(by_alias=True)
-        }
-        self.__rpc(msg, prvkey)
+        payload = rpc.ReportAllocations(
+            colonyname=colonyname,
+            executorname=executorname,
+            allocations=allocations
+        )
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def list_executors(self, colonyname: str, prvkey: str) -> List[Executor]:
-        msg = {
-            "msgtype": "getexecutorsmsg",
-            "colonyname": colonyname
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Executor(**item) for item in response]
+    def list_executors(self, colonyname: str, executor_prvkey: str) -> List[Executor]:
+        payload = rpc.GetExecutors(colonyname=colonyname)
+        return self.__rpc(payload, executor_prvkey, List[Executor])
 
-    def approve_executor(self, colonyname: str, executorname: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "approveexecutormsg",
-            "colonyname": colonyname,
-            "executorname": executorname
-        }
-        self.__rpc(msg, prvkey)
+    def approve_executor(self, colonyname: str, executorname: str, colony_prvkey: str) -> None:
+        payload = rpc.ApproveExecutor(colonyname=colonyname, executorname=executorname)
+        self.__rpc(payload, colony_prvkey, Empty)
 
-    def reject_executor(self, colonyname: str, executorname: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "rejectexecutormsg",
-            "colonyname": colonyname,
-            "executorname": executorname
-        }
-        self.__rpc(msg, prvkey)
+    def reject_executor(self, colonyname: str, executorname: str, colony_prvkey: str) -> None:
+        payload = rpc.RejectExecutor(colonyname=colonyname, executorname=executorname)
+        self.__rpc(payload, colony_prvkey, Empty)
 
-    def remove_executor(self, colonyname: str, executorname: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "removeexecutormsg",
-            "colonyname": colonyname,
-            "executorname": executorname
-        }
-        self.__rpc(msg, prvkey)
+    def remove_executor(self, colonyname: str, executorname: str, colony_prvkey: str) -> None:
+        payload = rpc.RemoveExecutor(colonyname=colonyname, executorname=executorname)
+        self.__rpc(payload, colony_prvkey, Empty)
 
-    def get_executor(self, colonyname: str, executorname: str, prvkey: str) -> Executor:
-        msg = {
-            "msgtype": "getexecutormsg",
-            "colonyname": colonyname,
-            "executorname": executorname
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Executor(**response)
+    def get_executor(self, colonyname: str, executorname: str, executor_prvkey: str) -> Executor:
+        payload = rpc.GetExecutor(colonyname=colonyname, executorname=executorname)
+        return self.__rpc(payload, executor_prvkey, Executor)
 
-    def submit_func_spec(self, spec: FuncSpec, prvkey) -> Process:
-        msg = {
-            "msgtype": "submitfuncspecmsg",
-            "spec": spec.model_dump(by_alias=True)
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Process(**response)
+    def submit_func_spec(self, spec: FuncSpec, executor_prvkey: str) -> Process:
+        payload = rpc.SubmitFunctionSpec(spec=spec)
+        return self.__rpc(payload, executor_prvkey, Process)
 
-    def submit_workflow(self, workflow: Workflow, prvkey) -> ProcessGraph:
-        msg = {
-            "msgtype": "submitworkflowspecmsg",
-            "spec": workflow.model_dump(by_alias=True)
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return ProcessGraph(**response)
+    def submit_workflow(self, workflow: Workflow, executor_prvkey: str) -> ProcessGraph:
+        payload = rpc.SubmitWorkflowSpec(spec=workflow)
+        return self.__rpc(payload, executor_prvkey, ProcessGraph)
 
     def assign(
         self,
         colonyname: str,
         timeout: int,
-        prvkey: str,
+        executor_prvkey: str,
         available_cpu: str = "1000m",
         available_mem: str = "1000Mi"
     ) -> Process:
-        msg = {
-            "msgtype": "assignprocessmsg",
-            "colonyname": colonyname,
-            "timeout": timeout,
-            "availablecpu": available_cpu,
-            "availablemem": available_mem
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Process(**response)
+        payload = rpc.AssignProcess(
+            colonyname=colonyname,
+            timeout=timeout,
+            availablecpu=available_cpu,
+            availablemem=available_mem
+        )
+        return self.__rpc(payload, executor_prvkey, Process)
 
-    def list_processes(self, colonyname: str, count: int, state: int, prvkey: str) -> List[Process]:
-        msg = {
-            "msgtype": "getprocessesmsg",
-            "colonyname": colonyname,
-            "count": count,
-            "state": state
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Process(**item) for item in response]
+    def list_processes(self, colonyname: str, count: int, state: int, executor_prvkey: str) -> List[Process]:
+        payload = rpc.GetProcesses(
+            colonyname=colonyname,
+            count=count,
+            state=state
+        )
+        return self.__rpc(payload, executor_prvkey, List[Process])
 
-    def get_process(self, processid: str, prvkey: str) -> Process:
-        msg = {
-            "msgtype": "getprocessmsg",
-            "processid": processid
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Process(**response)
+    def get_process(self, processid: str, executor_prvkey: str) -> Process:
+        payload = rpc.GetProcess(processid=processid)
+        return self.__rpc(payload, executor_prvkey, Process)
 
-    def remove_process(self, processid: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "removeprocessmsg",
-            "processid": processid
-        }
-        self.__rpc(msg, prvkey)
+    def remove_process(self, processid: str, executor_prvkey: str, all: bool = False) -> None:
+        payload = rpc.RemoveProcess(processid=processid, all=all)
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def close(self, processid: str, output: List[Any], prvkey: str) -> None:
-        msg = {
-            "msgtype": "closesuccessfulmsg",
-            "processid": processid,
-            "out": output
-        }
-        self.__rpc(msg, prvkey)
+    def close(self, processid: str, output: List[Any], executor_prvkey: str) -> None:
+        payload = rpc.CloseSuccessful(processid=processid, out=output)
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def fail(self, processid: str, errors: List[str], prvkey: str) -> None:
-        msg = {
-            "msgtype": "closefailedmsg",
-            "processid": processid,
-            "errors": errors
-        }
-        self.__rpc(msg, prvkey)
+    def fail(self, processid: str, errors: List[str], executor_prvkey: str) -> None:
+        payload = rpc.CloseFailed(processid=processid, errors=errors)
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def set_output(self, processid: str, arr: List[Any], prvkey: str) -> None:
-        msg = {
-            "msgtype": "setoutputmsg",
-            "processid": processid,
-            "out": arr
-        }
-        self.__rpc(msg, prvkey)
+    def set_output(self, processid: str, arr: List[Any], executor_prvkey: str) -> None:
+        payload = rpc.SetOutput(processid=processid, out=arr)
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def stats(self, colonyname: str, prvkey: str) -> Statistics:
-        msg = {
-            "msgtype": "getcolonystatsmsg",
-            "colonyname": colonyname
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Statistics(**response)
+    def stats(self, colonyname: str, executor_prvkey: str) -> Statistics:
+        payload = rpc.GetColonyStatistics(colonyname=colonyname)
+        return self.__rpc(payload, executor_prvkey, Statistics)
 
-    def add_attribute(self, processid: str, key: str, value: str, prvkey: str) -> Attribute:
-        attribute = {
-            "key": key,
-            "value": value,
-            "targetid": processid,
-            "attributetype": 1
-        }
-        msg = {
-            "msgtype": "addattributemsg",
-            "attribute": attribute
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Attribute(**response)
+    def add_attribute(self, processid: str, key: str, value: str, executor_prvkey: str) -> Attribute:
+        attribute = rpc.Attribute(
+            key=key,
+            value=value,
+            targetid=processid,
+            attributetype=1
+        )
+        payload = rpc.AddAttribute(attribute=attribute)
+        return self.__rpc(payload, executor_prvkey, Attribute)
 
-    def get_attribute(self, attributeid: str, prvkey: str) -> Attribute:
-        msg = {
-            "msgtype": "getattributemsg",
-            "attributeid": attributeid
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Attribute(**response)
+    def get_attribute(self, attributeid: str, executor_prvkey: str) -> Attribute:
+        payload = rpc.GetAttribute(attributeid=attributeid)
+        return self.__rpc(payload, executor_prvkey, Attribute)
 
-    def get_processgraph(self, processgraphid: str, prvkey: str) -> ProcessGraph:  # TODO: unittest
-        msg = {
-            "msgtype": "getprocessgraphmsg",
-            "processgraphid": processgraphid
-        }
-        graph = self.__rpc(msg, prvkey)
-        if not isinstance(graph, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return ProcessGraph(**graph)
+    def get_processgraph(self, processgraphid: str, executor_prvkey: str) -> ProcessGraph:  # TODO: unittest
+        payload = rpc.GetProcessGraph(processgraphid=processgraphid)
+        return self.__rpc(payload, executor_prvkey, ProcessGraph)
 
-    def add_function(self, colonyname: str, executorname: str, funcname: str, prvkey: str) -> Function:
-        func = {
-            "colonyname": colonyname,
-            "executorname": executorname,
-            "funcname": funcname,
-        }
-        msg = {
-            "msgtype": "addfunctionmsg",
-            "fun": func
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Function(**response)
+    def add_function(self, colonyname: str, executorname: str, funcname: str, executor_prvkey: str) -> Function:
+        func = rpc.Function(
+            colonyname=colonyname,
+            executorname=executorname,
+            funcname=funcname,
+        )
+        payload = rpc.AddFunction(fun=func)
+        return self.__rpc(payload, executor_prvkey, Function)
 
-    def get_functions_by_executor(self, colonyname: str, executorname: str, prvkey: str) -> List[Function]:
-        msg = {
-            "msgtype": "getfunctionsmsg",
-            "colonyname": colonyname,
-            "executorname": executorname
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Function(**item) for item in response]
+    def get_functions_by_executor(self, colonyname: str, executorname: str, executor_prvkey: str) -> List[Function]:
+        payload = rpc.GetFunctions(
+            colonyname=colonyname,
+            executorname=executorname
+        )
+        return self.__rpc(payload, executor_prvkey, List[Function])
 
-    def get_functions_by_colony(self, colonyname: str, prvkey: str) -> List[Function]:
-        msg = {
-            "msgtype": "getfunctionsmsg",
-            "colonyname": colonyname
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Function(**item) for item in response]
+    def get_functions_by_colony(self, colonyname: str, executor_prvkey: str) -> List[Function]:
+        payload = rpc.GetFunctions(colonyname=colonyname)
+        return self.__rpc(payload, executor_prvkey, List[Function])
 
-    def find_process(self, nodename: str, processids: List[str], prvkey: str) -> Optional[Process]:
+    def find_process(self, nodename: str, processids: List[str], executor_prvkey: str) -> Optional[Process]:
         for processid in processids:
-            process = self.get_process(processid, prvkey)
+            process = self.get_process(processid, executor_prvkey)
             if process.spec.nodename == nodename:
                 return process
         return None
@@ -489,105 +377,59 @@ class Colonies:
         funcspec: FuncSpec,
         nodename: str,
         insert: bool,
-        prvkey: str
+        executor_prvkey: str
     ) -> Process:
         funcspec.nodename = nodename
-        msg = {
-            "msgtype": "addchildmsg",
-            "processgraphid": processgraphid,
-            "parentprocessid": parentprocessid,
-            "childprocessid": childprocessid,
-            "insert": insert,
-            "spec": funcspec.model_dump()
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Process(**response)
+        payload = rpc.AddChild(
+            processgraphid=processgraphid,
+            parentprocessid=parentprocessid,
+            childprocessid=childprocessid,
+            insert=insert,
+            spec=funcspec
+        )
+        return self.__rpc(payload, executor_prvkey, Process)
 
-    def create_snapshot(self, colonyname: str, label: str, name: str, prvkey: str) -> Snapshot:
-        msg = {
-            "msgtype": "createsnapshotmsg",
-            "colonyname": colonyname,
-            "label": label,
-            "name": name
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Snapshot(**response)
+    def create_snapshot(self, colonyname: str, label: str, name: str, executor_prvkey: str) -> Snapshot:
+        payload = rpc.CreateSnapshot(colonyname=colonyname, label=label, name=name)
+        return self.__rpc(payload, executor_prvkey, Snapshot)
 
-    def get_snapshots(self, colonyname: str, prvkey: str) -> List[Snapshot]:
-        msg = {
-            "msgtype": "getsnapshotsmsg",
-            "colonyname": colonyname,
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Snapshot(**item) for item in response]
+    def get_snapshots(self, colonyname: str, executor_prvkey: str) -> List[Snapshot]:
+        payload = rpc.GetSnapshot(colonyname=colonyname)
+        return self.__rpc(payload, executor_prvkey, List[Snapshot])
 
-    def get_snapshot_by_name(self, colonyname: str, name: str, prvkey: str) -> Snapshot:
-        msg = {
-            "msgtype": "getsnapshotmsg",
-            "colonyname": colonyname,
-            "snapshotid": "",
-            "name": name
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Snapshot(**response)
+    def get_snapshot_by_name(self, colonyname: str, name: str, executor_prvkey: str) -> Snapshot:
+        payload = rpc.GetSnapshot(colonyname=colonyname, name=name)
+        return self.__rpc(payload, executor_prvkey, Snapshot)
 
-    def get_snapshot_by_id(self, colonyname: str, snapshotid: str, prvkey: str) -> Snapshot:
-        msg = {
-            "msgtype": "getsnapshotmsg",
-            "colonyname": colonyname,
-            "snapshotid": snapshotid,
-            "name": ""
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Snapshot(**response)
+    def get_snapshot_by_id(self, colonyname: str, snapshotid: str, executor_prvkey: str) -> Snapshot:
+        payload = rpc.GetSnapshot(colonyname=colonyname, snapshotid=snapshotid,)
+        return self.__rpc(payload, executor_prvkey, Snapshot)
 
-    def add_log(self, processid: str, logmsg: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "addlogmsg",
-            "processid": processid,
-            "message": logmsg
-        }
-        self.__rpc(msg, prvkey)
+    def add_log(self, processid: str, logmsg: str, executor_prvkey: str) -> None:
+        payload = rpc.AddLog(processid=processid, message=logmsg)
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def get_process_log(self, colonyname: str, processid: str, count: int, since: int, prvkey: str) -> List[Log]:
-        msg = {
-            "msgtype": "getlogsmsg",
-            "colonyname": colonyname,
-            "executorname": "",
-            "processid": processid,
-            "count": count,
-            "since": since
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Log(**item) for item in response]
+    def get_process_log(self, colonyname: str, processid: str, count: int, since: int, executor_prvkey: str) -> List[Log]:
+        payload = rpc.GetLogs(
+            colonyname=colonyname,
+            executorname="",
+            processid=processid,
+            count=count,
+            since=since
+        )
+        return self.__rpc(payload, executor_prvkey, List[Log])
 
-    def get_executor_log(self, colonyname: str, executorname: str, count: int, since: int, prvkey: str) -> List[Log]:
-        msg = {
-            "msgtype": "getlogsmsg",
-            "colonyname": colonyname,
-            "executorname": executorname,
-            "processid": "",
-            "count": count,
-            "since": since
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Log(**item) for item in response]
+    def get_executor_log(self, colonyname: str, executorname: str, count: int, since: int, executor_prvkey: str) -> List[Log]:
+        payload = rpc.GetLogs(
+            colonyname=colonyname,
+            executorname=executorname,
+            processid="",
+            count=count,
+            since=since
+        )
+        return self.__rpc(payload, executor_prvkey, List[Log])
 
-    def sync(self, dir: str, label: str, keeplocal: bool, colonyname: str, prvkey: str) -> None:
+    def sync(self, dir: str, label: str, keeplocal: bool, colonyname: str, executor_prvkey: str) -> None:
         libname = os.environ.get("CFSLIB")
         if libname == None:
             libname = "/usr/local/lib/libcfslib.so"
@@ -602,22 +444,15 @@ class Colonies:
         c_label = ctypes.c_char_p(label.encode('utf-8'))
         c_keeplocal = ctypes.c_int(keeplocal)
         c_colonyname = ctypes.c_char_p(colonyname.encode('utf-8'))
-        c_prvkey = ctypes.c_char_p(prvkey.encode('utf-8'))
+        c_prvkey = ctypes.c_char_p(executor_prvkey.encode('utf-8'))
 
         res = c_lib.sync(c_host, c_port, c_insecure, c_skip_tls_verify, c_dir, c_label, c_keeplocal, c_colonyname, c_prvkey)
         if res != 0:
             raise Exception("failed to sync")
 
-    def get_files(self, label: str, colonyname: str, prvkey: str) -> List[FileData]:
-        msg = {
-            "msgtype": "getfilesmsg",
-            "colonyname": colonyname,
-            "label": label
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [FileData(**item) for item in response]
+    def get_files(self, label: str, colonyname: str, executor_prvkey: str) -> List[FileData]:
+        payload = rpc.GetFiles(colonyname=colonyname, label=label)
+        return self.__rpc(payload, executor_prvkey, List[FileData])
 
     def add_cron(
         self,
@@ -626,101 +461,68 @@ class Colonies:
         wait: bool,
         workflow: Workflow,
         colonyname: str,
-        prvkey: str
+        executor_prvkey: str,
+        random:bool=False
     ) -> Cron:
-        workflowspec_str = json.dumps(workflow.model_dump(by_alias=True))
-        workflowspec_str = workflowspec_str.replace('"', '\"')
-        cron = {
-            "name": cronname,
-            "colonyname": colonyname,
-            "interval": -1,
-            "waitforprevprocessgrap": wait,
-            "cronexpression": cronexpr,
-            "workflowspec": workflowspec_str
-        }
-        msg = {
-            "msgtype": "addcronmsg",
-            "cron": cron
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Cron(**response)
+        cron = rpc.Cron(
+            name=cronname,
+            colonyname=colonyname,
+            interval=-1,  # -1 means cron expression is used
+            waitforprevprocessgraph=wait,
+            cronexpression=cronexpr,
+            workflowspec=json.dumps(workflow.model_dump(by_alias=True)),
+            random=random,
+        )
+        payload = rpc.AddCron(cron=cron)
+        return self.__rpc(payload, executor_prvkey, Cron)
 
-    def get_cron(self, cronid: str, prvkey: str) -> Cron:
-        msg = {
-            "msgtype": "getcronmsg",
-            "cronid": cronid
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return Cron(**response)
+    def get_cron(self, cronid: str, executor_prvkey: str) -> Cron:
+        payload = rpc.GetCron(cronid=cronid)
+        return self.__rpc(payload, executor_prvkey, Cron)
 
-    def run_cron(self, cronid, prvkey):
-        msg = {
-            "msgtype": "runcronmsg",
-            "cronid": cronid
-        }
-        return self.__rpc(msg, prvkey)
+    def get_crons(self, colonyname: str, count: int, executor_prvkey: str) -> List[Cron]:
+        payload = rpc.GetCrons(colonyname=colonyname, count=count)
+        return self.__rpc(payload, executor_prvkey, List[Cron])
 
-    def resolve_generator_by_name(self, colonyname, generatorname, prvkey):
-        msg = {
-            "msgtype": "resolvegeneratormsg",
-            "colonyname": colonyname,
-            "generatorname": generatorname
-        }
-        return self.__rpc(msg, prvkey)
+    def del_cron(self, cronid: str, executor_prvkey: str, all: bool=False) -> None:
+        payload = rpc.RemoveCron(all=all, cronid=cronid)
+        self.__rpc(payload, executor_prvkey, Empty)
 
-    def change_colony_id(self, colonyname, new_colony_id, prvkey):
-        msg = {
-            "msgtype": "changecolonyidmsg",
-            "colonyname": colonyname,
-            "colonyid": new_colony_id
-        }
-        self.__rpc(msg, prvkey)
+    def run_cron(self, cronid: str, executor_prvkey: str) -> Cron:
+        payload = rpc.RunCron(cronid=cronid)
+        return self.__rpc(payload, executor_prvkey, Cron)
 
-    def change_executor_id(self, colonyname, new_executor_id, prvkey):
-        msg = {
-            "msgtype": "changeexecutoridmsg",
-            "colonyname": colonyname,
-            "executorid": new_executor_id
-        }
-        self.__rpc(msg, prvkey)
+    def resolve_generator_by_name(self, colonyname: str, generatorname: str, executor_prvkey: str) -> Generator:
+        payload = rpc.ResolveGenerator(
+            colonyname=colonyname,
+            generatorname=generatorname
+        )
+        return self.__rpc(payload, executor_prvkey, Generator)
 
-    def change_user_id(self, colonyname, new_user_id, prvkey):
-        msg = {
-            "msgtype": "changeuseridmsg",
-            "colonyname": colonyname,
-            "userid": new_user_id
-        }
-        self.__rpc(msg, prvkey)
+    def change_colony_id(self, colonyname: str, new_colony_id: str, server_prvkey: str) -> None:
+        payload = rpc.ChangeColonyID(
+            colonyname=colonyname,
+            colonyid=new_colony_id
+        )
+        self.__rpc(payload, server_prvkey, Empty)
 
-    def change_server_id(self, new_server_id, prvkey):
-        msg = {
-            "msgtype": "changeserveridmsg",
-            "serverid": new_server_id
-        }
-        self.__rpc(msg, prvkey)
+    def change_executor_id(self, colonyname: str, new_executor_id: str, colony_prvkey: str) -> None:
+        payload = rpc.ChangeExecutorID(
+            executorid=new_executor_id,
+            colonyname=colonyname
+        )
+        self.__rpc(payload, colony_prvkey, Empty)
 
-    def get_crons(self, colonyname: str, count: int, prvkey: str) -> List[Cron]:
-        msg = {
-            "msgtype": "getcronsmsg",
-            "colonyname": colonyname,
-            "count": count
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [Cron(**item) for item in response]
+    def change_user_id(self, colonyname: str, new_user_id: str, colony_prvkey: str) -> None:
+        payload = rpc.ChangeUserID(
+            colonyname=colonyname,
+            userid=new_user_id
+        )
+        self.__rpc(payload, colony_prvkey, Empty)
 
-    def del_cron(self, cronid: str, prvkey: str) -> None:
-        msg = {
-            "msgtype": "removecronmsg",
-            "all": False,
-            "cronid": cronid
-        }
-        self.__rpc(msg, prvkey)
+    def change_server_id(self, new_server_id: str, server_prvkey: str) -> None:
+        payload = rpc.ChangeServerID(serverid=new_server_id)
+        self.__rpc(payload, server_prvkey, Empty)
 
     def __generate_random_id(self) -> str:
         random_uuid = uuid.uuid4()
@@ -774,28 +576,28 @@ class Colonies:
     def upload_file(
         self,
         colonyname: str,
-        prvkey: str,
+        executor_prvkey: str,
         filepath: str,
         label: str
     ) -> File:
-        return self.__upload_file(filepath, label, colonyname, prvkey)
+        return self.__upload_file(filepath, label, colonyname, executor_prvkey)
 
     def upload_data(
         self,
         colonyname: str,
-        prvkey: str,
+        executor_prvkey: str,
         filename: str,
         data: bytes,
         label: str
     ) -> File:
-        return self.__upload_file(filename, label, colonyname, prvkey, file_bytes=data)
+        return self.__upload_file(filename, label, colonyname, executor_prvkey, file_bytes=data)
 
     def __upload_file(
         self,
         filepath: str,
         label: str,
         colonyname: str,
-        prvkey: str,
+        executor_prvkey: str,
         file_bytes: Optional[bytes] = None
     ) -> File:
         endpoint = os.getenv("AWS_S3_ENDPOINT")
@@ -896,83 +698,71 @@ class Colonies:
         else:
             checksum = self.__checksum_data(file_bytes)
 
-        f = File(
-            fileid="",
+        f = rpc.File(
             colonyname=colonyname,
             label=label,
             name=filename,
             size=filesize,
-            sequencenr=1,
             checksum=checksum,
             checksumalg="SHA256",
             ref=ref
         )
 
-        msg = {
-            "msgtype": "addfilemsg",
-            "file": f.model_dump(by_alias=True)
-        }
+        payload = rpc.AddFile(
+            file=f
+        )
 
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, dict):
-            raise ColoniesError("Expected response to be a dictionary")
-        return File(**response)
+        return self.__rpc(payload, executor_prvkey, File)
 
     def get_file(
         self,
         colonyname: str,
-        prvkey: str,
-        label: str,
-        filename: str,
+        executor_prvkey: str,
+        label: Optional[str],
+        filename: Optional[str] = None,
         fileid: Optional[str] = None,
         latest: bool = True
     ) -> List[File]:
-        msg = {
-            "msgtype": "getfilemsg",
-            "colonyname": colonyname,
-            "fileid": fileid,
-            "label": label,
-            "name": filename,
-            "latest": latest
-        }
-        response = self.__rpc(msg, prvkey)
-        if not isinstance(response, list):
-            raise ColoniesError("Expected response to be a list")
-        return [File(**item) for item in response]
+        if (fileid and filename) or (not fileid and not filename) or (not filename and not label):
+            raise ValueError("Please provide exactly one of: 'fileid' or ('filename' AND 'label')")
+        payload = rpc.GetFile(
+            colonyname=colonyname,
+            fileid=fileid,
+            label=label,
+            name=filename,
+            latest=latest
+        )
+        return self.__rpc(payload, executor_prvkey, List[File])
 
     def __remove_file(
         self,
         label: Optional[str],
         fileid: Optional[str],
-        name: Optional[str],
+        filename: Optional[str],
         colonyname: str,
-        prvkey: str
+        executor_prvkey: str
     ) -> None:
-        if fileid is not None and name is not None:
-            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
+        if (fileid and filename) or (not fileid and not filename) or (not filename and not label):
+            raise ValueError("Please provide exactly one of: 'fileid' or ('filename' AND 'label')")
 
-        msg = {
-            "msgtype": "removefilemsg",
-            "colonyname": colonyname,
-            "fileid": fileid,
-            "label": label,
-            "name": name
-        }
-        self.__rpc(msg, prvkey)
+        payload = rpc.RemoveFile(
+            colonyname=colonyname,
+            fileid=fileid,
+            label=label,
+            name=filename
+        )
+        self.__rpc(payload, executor_prvkey, Empty)
 
     def download_file(
         self,
         colonyname: str,
-        prvkey: str,
+        executor_prvkey: str,
         dst: str,
-        label: str,
         filename: str,
+        label: Optional[str] = None,
         fileid: Optional[str] = None,
         latest: bool = True
     ) -> str:
-        if fileid is not None and filename is not None:
-            raise ValueError("Both 'fileid' and 'filename' cannot be set at the same time. Please provide only one.")
-
         access_key = os.getenv("AWS_S3_ACCESSKEY")
         secret_key = os.getenv("AWS_S3_SECRETKEY")
         skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
@@ -984,7 +774,7 @@ class Colonies:
         except Exception as e:
             raise e
 
-        file = self.get_file(colonyname, prvkey, label=label, fileid=fileid, filename=filename, latest=latest)
+        file = self.get_file(colonyname, executor_prvkey, label=label, fileid=fileid, filename=filename, latest=latest)
 
         if len(file) == 0:
             raise Exception("invalid file")
@@ -1026,20 +816,17 @@ class Colonies:
     def download_data(
         self,
         colonyname: str,
-        prvkey: str,
-        label: str,
-        filename: str,
+        executor_prvkey: str,
+        label: Optional[str] = None,
+        filename: Optional[str] = None,
         fileid: Optional[str] = None,
         latest: bool = True
     ) -> bytes:
-        if fileid is not None and filename is not None:
-            raise ValueError("Both 'fileid' and 'filename' cannot be set at the same time. Please provide only one.")
-
         access_key = os.getenv("AWS_S3_ACCESSKEY")
         secret_key = os.getenv("AWS_S3_SECRETKEY")
         skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
 
-        file = self.get_file(colonyname, prvkey, label=label, fileid=fileid, filename=filename, latest=latest)
+        file = self.get_file(colonyname, executor_prvkey, label=label, fileid=fileid, filename=filename, latest=latest)
 
         if len(file) == 0:
             raise Exception("invalid file")
@@ -1083,19 +870,16 @@ class Colonies:
     def delete_file(
         self,
         colonyname: str,
-        prvkey: str,
-        filename: str,
-        label: str,
+        executor_prvkey: str,
+        filename: Optional[str] = None,
+        label: Optional[str] = None,
         fileid: Optional[str] = None
     ) -> None:
-        if fileid is not None and filename is not None:
-            raise ValueError("Both 'fileid' and 'name' cannot be set at the same time. Please provide only one.")
-
         access_key = os.getenv("AWS_S3_ACCESSKEY")
         secret_key = os.getenv("AWS_S3_SECRETKEY")
         skip_verify_str = os.getenv("AWS_S3_SKIPVERIFY")
 
-        file = self.get_file(colonyname, prvkey, label=label, fileid=fileid, filename=filename)
+        file = self.get_file(colonyname, executor_prvkey, label=label, fileid=fileid, filename=filename)
 
         if len(file) == 0:
             raise Exception("invalid file")
@@ -1131,4 +915,4 @@ class Colonies:
         except Exception as e:
             raise e
 
-        self.__remove_file(label, fileid, filename, colonyname, prvkey)
+        self.__remove_file(label, fileid, filename, colonyname, executor_prvkey)

@@ -29,6 +29,7 @@ class TestFuncSpec(unittest.TestCase):
         self.assertEqual(spec.funcname, "sum_nums")
         self.assertEqual(spec.args, ["helloworld"])
 
+        assert spec.conditions is not None
         self.assertEqual(spec.conditions.colonyname, "colonyname")
         self.assertEqual(spec.conditions.executortype, "echo_executor")
         if spec.conditions.executornames is not None:

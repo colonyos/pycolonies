@@ -24,15 +24,14 @@ class PythonExecutor:
         self.register()
         
     def register(self) -> None:
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
         try:
-            executor = self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                executorname=self.executorname,
+                executorid=self.executorid,
+                colonyname=self.colonyname,
+                executortype=self.executortype,
+                colony_prvkey=self.colony_prvkey
+            )
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
             
             self.colonies.add_function(self.colonyname, 

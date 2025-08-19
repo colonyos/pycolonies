@@ -151,33 +151,25 @@ Executors are responsible for executing processes. They connect to the Colonies 
 
 Since we have access to the Colony private key (see devenv file), we can implement a self-registering Executor. 
 ```python
+from pycolonies import Colonies, Crypto, rpc
+
 colonies = Colonies("localhost", 50080)
-crypto = Crypto()
 colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
 colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
+
+crypto = Crypto()
 executor_prvkey = crypto.prvkey()
 executorid = crypto.id(executor_prvkey)
-
-executor = {
-    "executorname": "echo_executor",
-    "executorid": executorid,
-    "colonyname": colonyname,
-    "executortype": "echo_executor"
-}
-
-colonies.add_executor(executor, colony_prvkey)
-colonies.approve_executor(executorid, colony_prvkey)
+executorname = "echo_executor"
+executortype = "echo_executor"
+colonies.add_executor(executorid, executorname, executortype, colonyname, colony_prvkey)
+colonies.approve_executor(executorname, colonyname, colony_prvkey)
 ```
 
 *Optinally:* We also need to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. 
 
 ```python
-colonies.add_function(executorid, 
-                      colonyname, 
-                      "echo",  
-                      ["arg"], 
-                      "Python function that returns its input as output", 
-                      executor_prvkey)
+colonies.add_function(colonyname, executorid, "echo", executor_prvkey)
 ```
 
 The next step is to connect the Colonies server and get process assignments. Note that the Colonies server never establish connections to the Executors, but rather it the responsibility of the Executors to connects to the Colonies server. In this way, Executors may run behind firewalls without problems. The `assign` function below will block for 10 seconds if there are no suitable process to assign.

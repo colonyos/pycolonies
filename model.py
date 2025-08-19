@@ -1,51 +1,56 @@
 from datetime import datetime
 
 from typing import List, Dict, Optional, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
-class Gpu(BaseModel):
-    name: str = ""
-    mem: str = ""
-    count: int = 0
-    nodecount: int = 0
+# Base model for all RPC request messages
+class Model(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
 
 
-class Conditions(BaseModel):
-    colonyname: str = ""
-    executornames: List[str] | None = None
+class Gpu(Model):
+    name: Optional[str] = None
+    mem: Optional[str] = None
+    count: Optional[int] = None
+    nodecount: Optional[int] = None
+
+
+class Conditions(Model):
+    colonyname: Optional[str] = None
+    executornames: Optional[List[str]] = None
     executortype: str
     dependencies: List[str] = []
     nodes: int = 0
-    cpu: str = ""
+    cpu: Optional[str] = None
     processes: int = 0
     processespernode: int = 0
-    mem: str = ""
-    storage: str = ""
-    gpu: Gpu | None = Gpu()
+    mem: Optional[str] = None
+    storage: Optional[str] = None
+    gpu: Optional[Gpu] = None
     walltime: int = 0
 
-class Fs(BaseModel):
+class Fs(Model):
     mount: str
-    snapshots: List[str] | None
-    dirs: List[str] | None
+    snapshots: Optional[List[str]]
+    dirs: Optional[List[str]]
 
 
-class FuncSpec(BaseModel):
-    nodename: str = ""
-    funcname: str = ""
+class FuncSpec(Model):
+    nodename: Optional[str] = None
+    funcname: str
     args: List[str | int] = []
-    kwargs: Dict[str, str | List[str]] | None = {}
+    kwargs: Dict[str, str | List[str]] = {}
     priority: int = 0
     maxwaittime: int = 0
     maxexectime: int = 0
     maxretries: int = 0
-    conditions: Conditions
-    label: str = ""
-    fs: Fs | None = Fs(mount="", snapshots=None, dirs=None)
+    conditions: Optional[Conditions] = None
+    label: Optional[str] = None
+    fs: Optional[Fs] = None
     env: Dict[str, str] = {}
 
 
-class Attribute(BaseModel):
+class Attribute(Model):
     id: str = Field(..., alias="attributeid")
     targetid: str
     targetcolonyname: str = Field(..., alias="targetcolonyname")
@@ -56,7 +61,7 @@ class Attribute(BaseModel):
     value: str
 
 
-class Process(BaseModel):
+class Process(Model):
     processid: str
     initiatorid: str
     initiatorname: str
@@ -70,14 +75,14 @@ class Process(BaseModel):
     waitdeadline: datetime
     execdeadline: datetime
     retries: int
-    attributes: List[Attribute] | None
+    attributes: Optional[List[Attribute]]
     spec: FuncSpec
     waitforparents: bool = False
     parents: List[str]
     children: List[str]
     processgraphid: str
-    input: List[str | int | float] | None = Field(alias="in")
-    output: List[str | int | float] | None = Field(alias="out")
+    input: Optional[List[str | int | float]] = Field(alias="in")
+    output: Optional[List[str | int | float]] = Field(alias="out")
     errors: List[str]
     
     def __init__(self, **data: Any) -> None:
@@ -88,17 +93,17 @@ class Process(BaseModel):
         super().__init__(**data)
 
 
-class Workflow(BaseModel):
+class Workflow(Model):
     colonyname: str
     functionspecs: List[FuncSpec] = []
 
 
-class Position(BaseModel):
+class Position(Model):
     x: int
     y: int
 
 
-class ProcessNode(BaseModel):
+class ProcessNode(Model):
     id: str
     data: Dict[str, str] = {}
     position: Position
@@ -106,14 +111,14 @@ class ProcessNode(BaseModel):
     style: Dict[str, str] = {}
 
 
-class ProcessEdge(BaseModel):
+class ProcessEdge(Model):
     id: str
     source: str
     target: str
     animated: bool
 
 
-class ProcessGraph(BaseModel):
+class ProcessGraph(Model):
     processgraphid: str
     initiatorid: str
     initiatorname: str
@@ -128,7 +133,7 @@ class ProcessGraph(BaseModel):
     edges: List[ProcessEdge]
 
 
-class S3Object(BaseModel):
+class S3Object(Model):
     server: str
     port: int
     tls: bool
@@ -140,11 +145,11 @@ class S3Object(BaseModel):
     object: str = Field(..., alias="object")
     bucket: str = Field(..., alias="bucket")
 
-class Reference(BaseModel):
+class Reference(Model):
     protocol: str
     s3object: S3Object = Field(..., alias="s3object")
 
-class File(BaseModel):
+class File(Model):
     fileid: str = Field(..., alias="fileid")
     colonyname: str = Field(..., alias="colonyname")
     label: str = Field(..., alias="label")
@@ -164,14 +169,14 @@ class File(BaseModel):
         return v
 
 
-class FileData(BaseModel):
+class FileData(Model):
     name: str
     checksum: str
     size: int
     s3filename: str
 
 
-class Cron(BaseModel):
+class Cron(Model):
     cronid: str
     initiatorid: str
     initiatorname: str
@@ -188,7 +193,7 @@ class Cron(BaseModel):
     checkerperiod: int
 
 
-class Log(BaseModel):
+class Log(Model):
     processid: str
     colonyname: str
     executorname: str
@@ -196,13 +201,13 @@ class Log(BaseModel):
     timestamp: int
 
 
-class Location(BaseModel):
+class Location(Model):
     long: float
     lat: float
     desc: str
 
 
-class Hardware(BaseModel):
+class Hardware(Model):
     model: str
     nodes: int
     cpu: str
@@ -211,22 +216,22 @@ class Hardware(BaseModel):
     gpu: Gpu
 
 
-class Software(BaseModel):
+class Software(Model):
     name: str
     type: str
     version: str
 
 
-class Capabilities(BaseModel):
+class Capabilities(Model):
     hardware: Hardware
     software: Software
 
 
-class Allocations(BaseModel):
-    projects: Dict[str, Any]
+class Allocations(Model):
+    projects: Optional[Dict[str, Any]] = None
 
 
-class Executor(BaseModel):
+class Executor(Model):
     executorid: str
     executortype: str
     name: str = Field(..., alias="executorname")
@@ -240,12 +245,12 @@ class Executor(BaseModel):
     allocations: Allocations
 
 
-class Colony(BaseModel):
+class Colony(Model):
     colonyid: str
     name: str
 
 
-class Statistics(BaseModel):
+class Statistics(Model):
     colonies: int
     executors: int
     waitingprocesses: int
@@ -258,7 +263,7 @@ class Statistics(BaseModel):
     failedworkflows: int
 
 
-class Function(BaseModel):
+class Function(Model):
     functionid: str
     executorname: str
     executortype: str
@@ -273,7 +278,7 @@ class Function(BaseModel):
     avgexectime: float
 
 
-class Snapshot(BaseModel):
+class Snapshot(Model):
     snapshotid: str
     colonyname: str
     label: str
@@ -282,7 +287,7 @@ class Snapshot(BaseModel):
     added: datetime
 
 
-class Generator(BaseModel):
+class Generator(Model):
     generatorid: str
     initiatorid: str
     initiatorname: str
@@ -295,3 +300,14 @@ class Generator(BaseModel):
     checkerperiod: int
     timeout: int
     added: datetime
+
+class User(Model):
+    colonyname: str
+    id: str = Field(..., alias="userid")
+    name: str
+    email: str
+    phone: str
+
+class Empty(Model):
+    """An empty class used to represent an empty response in RPC calls."""
+    pass

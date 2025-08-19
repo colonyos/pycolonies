@@ -26,15 +26,14 @@ class Executor:
         self.register()
         
     def register(self) -> None:
-        executor = {
-            "executorname": self.executorname + str(uuid.uuid4()),
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                executorname=self.executorname + str(uuid.uuid4()),
+                executorid=self.executorid,
+                colonyname=self.colonyname,
+                executortype=self.executortype,
+                colony_prvkey=self.colony_prvkey
+            )
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)

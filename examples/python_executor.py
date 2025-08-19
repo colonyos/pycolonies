@@ -25,15 +25,14 @@ class PythonExecutor:
         self.register()
         
     def register(self) -> None:
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                executorname=self.executorname,
+                executorid=self.executorid,
+                colonyname=self.colonyname,
+                executortype=self.executortype,
+                colony_prvkey=self.colony_prvkey
+            )
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
@@ -61,11 +60,12 @@ class PythonExecutor:
                 # extract args and call the function code we just injected
                 funcspec = assigned_process.spec
                 funcname = funcspec.funcname
+                assert funcname is not None, "Function name is None"
                 try:
                     self.colonies.add_function(self.colonyname, 
-                                             self.executorname, 
-                                             funcname,  
-                                             self.executor_prvkey)
+                                               self.executorname, 
+                                               funcname,  
+                                               self.executor_prvkey)
                 except Exception as err:
                     print(err)
 
@@ -119,6 +119,7 @@ class PythonExecutor:
         os._exit(0)
 
 def sigint_handler(signum: int, frame: Any) -> None:
+    del signum, frame
     executor.unregister()
 
 if __name__ == '__main__':

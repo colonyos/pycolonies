@@ -18,18 +18,17 @@ class PythonExecutor:
         self.register()
         
     def register(self) -> None:
-        executor = {
-            "executorname": "echo-executor",
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": "echo-executor"
-        }
-       
-        self.executorname = executor["executorname"]
+        self.executorname = "echo-executor"
 
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
-            self.colonies.approve_executor(self.colonyname, executor["executorname"], self.colony_prvkey)
+            self.colonies.add_executor(
+                executorid=self.executorid,
+                executorname="echo-executor",
+                executortype="echo-executor",
+                colonyname=self.colonyname,
+                colony_prvkey=self.colony_prvkey
+            )
+            self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
         print("Executor", self.executorname, "registered")

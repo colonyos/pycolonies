@@ -1,5 +1,5 @@
 from crypto import Crypto
-from pycolonies import colonies_client
+from pycolonies import colonies_client, rpc
 from pycolonies import ColoniesConnectionError
 import signal
 import base64 
@@ -144,18 +144,17 @@ class PythonExecutor:
             print(err)
         
     def register(self) -> None:
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-       
         print("register: ", executor)
 
         try:
             print("adding executor")
-            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                executorname=self.executorname,
+                executorid=self.executorid,
+                colonyname=self.colonyname,
+                executortype=self.executortype
+                colony_prvkey=self.colony_prvkey
+            )
             print("done adding executor")
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
             print("done approving executor")
