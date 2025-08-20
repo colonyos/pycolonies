@@ -89,6 +89,12 @@ def func_spec(func, args, colonyname, executortype, executorname=None, priority=
     return func_spec
 
 class Colonies:
+    url: str
+    host: str
+    port: int
+    tls: bool
+    native_crypto: bool
+
     WAITING = 0
     RUNNING = 1
     SUCCESSFUL = 2
