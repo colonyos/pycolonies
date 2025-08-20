@@ -6,9 +6,11 @@ from typing import Dict, Tuple, Any
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()
 
 def gen_nums(ctx: Dict[str, Any] = {}) -> Tuple[int, int]:
+    del ctx
     return 1, 2 
 
 def reduce(*nums: int, ctx: Dict[str, Any] = {}) -> int:
+    del ctx
     total = 0
     for n in nums:
         total += n

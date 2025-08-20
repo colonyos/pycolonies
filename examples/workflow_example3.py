@@ -37,6 +37,7 @@ def map(ctx: Dict[str, Any] = {}) -> None:
         insert = False
 
 def reduce(*nums: int, ctx: Dict[str, Any] = {}) -> int:
+    del ctx
     print("REDUCED CALLED")
     total = 0
     for n in nums:

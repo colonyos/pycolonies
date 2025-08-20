@@ -6,9 +6,11 @@ from typing import Dict, Tuple, Any
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()
 
 def gen_nums(ctx: Dict[str, Any] = {}) -> Tuple[int, int]:
+    del ctx
     return 1, 2 
 
 def sum_nums(n1: int, n2: int, ctx: Dict[str, Any] = {}) -> int:
+    del ctx
     return n1 + n2 
 
 wf = Workflow(colonyname=colonyname)

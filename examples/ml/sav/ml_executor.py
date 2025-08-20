@@ -215,6 +215,7 @@ class PythonExecutor:
         os._exit(0)
 
 def sigint_handler(signum: int, frame: Any) -> None:
+    del signum, frame
     executor.unregister()
 
 if __name__ == '__main__':

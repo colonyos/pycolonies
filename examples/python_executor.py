@@ -4,7 +4,6 @@ from pycolonies import ColoniesConnectionError
 import signal
 import base64 
 import os
-import uuid
 import sys
 from typing import Any, List
 

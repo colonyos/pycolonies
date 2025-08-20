@@ -5,10 +5,10 @@ from typing import Dict, Tuple, Any
 
 colonies, colonyname, colony_prvkey, executor_name, prvkey = colonies_client()
 
-def gen_data(ctx: Dict[str, Any] = {}) -> Tuple[int, int]:
+def gen_data(_: Dict[str, Any] = {}) -> Tuple[int, int]:
     return 1, 2 
 
-def process_data(*nums: int, ctx: Dict[str, Any] = {}) -> int:
+def process_data(*nums: int, _: Dict[str, Any] = {}) -> int:
     total = 0
     for n in nums:
         total += n
