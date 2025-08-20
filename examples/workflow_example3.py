@@ -1,5 +1,5 @@
 from pycolonies import colonies_client
-from pycolonies import func_spec
+from pycolonies import FuncSpec
 from pycolonies import Workflow
 from typing import Dict, Any
 
@@ -21,15 +21,15 @@ def map(ctx: Dict[str, Any] = {}) -> None:
 
     insert = True
     for i in range(1):
-        f = func_spec(func="gen_nums", 
-                      args=[], 
-                      colonyname=ctx["colonyname"], 
-                      executortype="python-executor",
-                      priority=200,
-                      maxexectime=100,
-                      maxretries=3,
-                      maxwaittime=100,
-                      code=code)
+        f = FuncSpec.create(func="gen_nums", 
+                            args=[], 
+                            colonyname=ctx["colonyname"], 
+                            executortype="python-executor",
+                            priority=200,
+                            maxexectime=100,
+                            maxretries=3,
+                            maxwaittime=100,
+                            code=code)
 
 
         colonies.add_child(processgraphid, map_processid, reduce_processid, f, "gen_nums_" + str(i), insert, executor_prvkey)
@@ -45,25 +45,27 @@ def reduce(*nums: int, ctx: Dict[str, Any] = {}) -> int:
 
 wf = Workflow(colonyname=colonyname)
 
-f = func_spec(func=map, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=map, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 wf.functionspecs.append(f)
 
-f = func_spec(func=reduce, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=reduce, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
+
+assert f.conditions, "FunctionSpec must have conditions defined."
 
 f.conditions.dependencies.append("map")
 wf.functionspecs.append(f)

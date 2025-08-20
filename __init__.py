@@ -6,7 +6,8 @@ import crypto
 import cfs
 import model
 import rpc
-from pycolonies import colonies_client, Colonies, func_spec
+from pycolonies import colonies_client, Colonies
+from model import FuncSpec
 
 __all__ = [
     'crypto',
@@ -14,6 +15,6 @@ __all__ = [
     'model',
     'rpc',
     'colonies_client',
-    'func_spec'
     'Colonies',
+    'FuncSpec'
 ]

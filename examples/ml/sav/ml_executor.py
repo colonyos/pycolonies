@@ -1,6 +1,5 @@
 from crypto import Crypto
 from pycolonies import colonies_client
-from pycolonies import func_spec
 from pycolonies import ColoniesConnectionError
 import signal
 import base64 

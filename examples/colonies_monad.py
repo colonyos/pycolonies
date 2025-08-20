@@ -1,6 +1,6 @@
 from pycolonies import Colonies
 from pycolonies import Workflow
-from pycolonies import func_spec 
+from pycolonies import FuncSpec 
 from typing import Union, Callable, Any
 
 import copy
@@ -14,14 +14,14 @@ class Function:
                  maxexectime: int = 200, 
                  maxretries: int = 3,
                  maxwaittime: int = -1) -> None:
-        self.func_spec = func_spec(func=func, 
-                                   args=[], 
-                                   colonyname=colonyname, 
-                                   executortype=executortype,
-                                   priority=priority,
-                                   maxexectime=maxexectime,
-                                   maxretries=maxretries,
-                                   maxwaittime=maxwaittime)
+        self.func_spec = FuncSpec.create(func=func, 
+                                         args=[], 
+                                         colonyname=colonyname, 
+                                         executortype=executortype,
+                                         priority=priority,
+                                         maxexectime=maxexectime,
+                                         maxretries=maxretries,
+                                         maxwaittime=maxwaittime)
         if isinstance(func, str):
             self.name = func 
         else:

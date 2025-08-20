@@ -1,10 +1,9 @@
 import requests
 import json
-from typing import List, Dict, Optional, Callable, Any, TypeVar, Type
+from typing import List, Optional, Any, TypeVar, Type
 from pydantic import TypeAdapter, ValidationError
 import base64
 from websocket import create_connection
-import inspect
 import os
 import ctypes
 import boto3
@@ -49,76 +48,6 @@ class ColoniesConnectionError(Exception):
 
 class ColoniesError(Exception):
     pass
-
-def func_spec(
-    func: str | Callable,
-    args: List[str | int],
-    colonyname: str,
-    executortype: str,
-    executorname: str | None = None,
-    priority: int = 1,
-    maxexectime: int = -1,
-    maxretries: int = -1,
-    maxwaittime: int = -1,
-    code: Optional[str] = None,
-    kwargs: Optional[Dict] = None,
-    fs: Optional[Fs] = None
-) -> FuncSpec:
-    if isinstance(func, str):
-        func_spec = FuncSpec(
-            nodename=func,
-            funcname=func,
-            args=args,
-            kwargs=kwargs,
-            fs=fs,
-            priority=priority,
-            maxwaittime=maxwaittime,
-            maxexectime=maxexectime,
-            maxretries=maxretries,
-            conditions= Conditions(
-                colonyname=colonyname,
-                executortype=executortype
-            )
-        )
-        if code is not None:
-            code_bytes = code.encode("ascii")
-            code_base64_bytes = base64.b64encode(code_bytes)
-            code_base64 = code_base64_bytes.decode("ascii")
-            func_spec.env["code"] = code_base64
-
-    else:
-        code = inspect.getsource(func)
-        code_bytes = code.encode("ascii")
-        code_base64_bytes = base64.b64encode(code_bytes)
-        code_base64 = code_base64_bytes.decode("ascii")
-
-        funcname = func.__name__
-        args_spec = inspect.getfullargspec(func)
-        args_spec_str = ','.join(args_spec.args)
-
-        func_spec = FuncSpec(
-            nodename=funcname,
-            funcname=funcname,
-            args=args,
-            kwargs=kwargs,
-            priority=priority,
-            maxwaittime=maxwaittime,
-            maxexectime=maxexectime,
-            maxretries=maxretries,
-            conditions=Conditions(
-                colonyname=colonyname,
-                executortype=executortype
-            ),
-            env={
-                "args_spec": args_spec_str,
-                "code": code_base64,
-            }
-        )
-
-    if executorname is not None:
-            func_spec.conditions.executornames = [ executorname ]
-
-    return func_spec
 
 class Colonies:
     url: str

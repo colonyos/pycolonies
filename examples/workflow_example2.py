@@ -1,5 +1,5 @@
 from pycolonies import colonies_client
-from pycolonies import func_spec
+from pycolonies import FuncSpec
 from pycolonies import Workflow
 from typing import Dict, Tuple, Any
 
@@ -15,38 +15,40 @@ def reduce(*nums: int, ctx: Dict[str, Any] = {}) -> int:
     return total 
 
 wf = Workflow(colonyname=colonyname)
-f = func_spec(func=gen_nums, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=gen_nums, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 f.nodename = "gen_nums1"
 wf.functionspecs.append(f)
 
-f = func_spec(func=gen_nums, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=gen_nums, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 f.nodename = "gen_nums2"
 wf.functionspecs.append(f)
 
-func_spec = func_spec(func=reduce, 
-                             args=[], 
-                             colonyname=colonyname, 
-                             executortype="python-executor",
-                             priority=200,
-                             maxexectime=100,
-                             maxretries=3,
-                             maxwaittime=100) 
+func_spec = FuncSpec.create(func=reduce, 
+                            args=[], 
+                            colonyname=colonyname, 
+                            executortype="python-executor",
+                            priority=200,
+                            maxexectime=100,
+                            maxretries=3,
+                            maxwaittime=100) 
+
+assert func_spec.conditions
 
 func_spec.conditions.dependencies = ["gen_nums1", "gen_nums2"]
 wf.functionspecs.append(func_spec)

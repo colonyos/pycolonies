@@ -1,5 +1,5 @@
 from pycolonies import colonies_client
-from pycolonies import func_spec
+from pycolonies import FuncSpec
 from pycolonies import Workflow
 from typing import Dict, Tuple, Any
 
@@ -12,25 +12,27 @@ def sum_nums(n1: int, n2: int, ctx: Dict[str, Any] = {}) -> int:
     return n1 + n2 
 
 wf = Workflow(colonyname=colonyname)
-f = func_spec(func=gen_nums,
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=gen_nums,
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 wf.functionspecs.append(f)
 
-f = func_spec(func=sum_nums, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=sum_nums, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
+
+assert f.conditions
 
 f.conditions.dependencies.append("gen_nums")
 

@@ -1,6 +1,6 @@
 import unittest
 
-from pycolonies import func_spec
+from pycolonies import FuncSpec
 
 
 class TestFuncSpec(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestFuncSpec(unittest.TestCase):
             "three": ["3", "4"]
         }
 
-        spec = func_spec(
+        spec = FuncSpec.create(
             func="sum_nums",
             args=["helloworld"],
             colonyname="colonyname",

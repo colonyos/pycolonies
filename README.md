@@ -60,7 +60,7 @@ INFO[0000] Process submitted                             ProcessID=ea398af346db8
 
 Or using the Python SDK.
 ```python
-spec = func_spec(
+spec = FuncSpec.create(
             func=sum_nums, 
             args=["helloworld"], 
             colonyname=colonyname, 
@@ -206,7 +206,7 @@ code_bytes = code.encode("ascii")
 code_base64_bytes = base64.b64encode(code_bytes)
 code_base64 = code_base64_bytes.decode("ascii")
 
-func_spec = {
+FuncSpec.create = {
     "funcname": "echo",
     "args": ["helloworld"],
     "priority": 0,
@@ -242,7 +242,7 @@ We can now create a distributed Python application where parts of the code runs 
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2
 
-spec = func_spec(
+spec = FuncSpec.create(
             func=sum_nums, 
             args=[1, 2], 
             colonyname=colonyname, 
@@ -322,25 +322,25 @@ def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
 wf = Workflow(colonyname=colonyname)
-f = func_spec(func=gen_nums,
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=gen_nums,
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 wf.functionspecs.append(f)
 
-f = func_spec(func=sum_nums, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=sum_nums, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 f.conditions.dependencies.append("gen_nums")
 
@@ -369,7 +369,7 @@ def map(ctx={}):
 
     insert = True
     for i in range(1):
-        f = func_spec(func="gen_nums", 
+        f = FuncSpec.create(func="gen_nums", 
                       args=[], 
                       colonyname=ctx["colonyname"], 
                       executortype="python-executor",
@@ -400,7 +400,7 @@ We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_n
 ```python
 wf = Workflow(colonyname=colonyname)
 
-f = func_spec(func=map, 
+f = FuncSpec.create(func=map, 
               args=[], 
               colonyname=colonyname, 
               executortype="python-executor",
@@ -411,7 +411,7 @@ f = func_spec(func=map,
 
 wf.functionspecs.append(f)
 
-f = func_spec(func=reduce, 
+f = FuncSpec.create(func=reduce, 
               args=[], 
               colonyname=colonyname, 
               executortype="python-executor",

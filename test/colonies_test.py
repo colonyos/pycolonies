@@ -52,10 +52,11 @@ class TestColonies(unittest.TestCase):
         )
 
     def submit_test_funcspec(self, colonyname: str, executor_prvkey: str) -> Process:
-        spec = FuncSpec(
-            conditions=Conditions(
-                colonyname=colonyname, executortype="test-executor-type"
-            ),
+        spec = FuncSpec.create(
+            func="test_func",
+            colonyname=colonyname,
+            executortype="test-executor-type",
+            args=[],
             env={"test_key": "test_value2"},
             maxexectime=-1,
             maxretries=3,
@@ -164,22 +165,23 @@ class TestColonies(unittest.TestCase):
         workflow = Workflow(
             colonyname=colonyname,
             functionspecs=[
-                FuncSpec(
+                FuncSpec.create(
+                    func="test_func",
+                    args=[],
                     nodename="node1",
-                    conditions=Conditions(
-                        colonyname=colonyname, executortype="test-executor-type"
-                    ),
+                    colonyname=colonyname,
+                    executortype="test-executor-type",
                     env={"test_key": "test_value2"},
                     maxexectime=-1,
                     maxretries=3,
                 ),
-                FuncSpec(
+                FuncSpec.create(
+                    func="test_func",
+                    args=[],
                     nodename="node2",
-                    conditions=Conditions(
-                        colonyname=colonyname,
-                        executortype="test-executor-type",
-                        dependencies=["node1"],
-                    ),
+                    colonyname=colonyname,
+                    executortype="test-executor-type",
+                    dependencies=["node1"],
                     env={"test_key": "test_value2"},
                     maxexectime=-1,
                     maxretries=3,
@@ -476,10 +478,11 @@ class TestColonies(unittest.TestCase):
         )
         self.colonies.approve_executor(colonyname, executorname, colony_prvkey)
 
-        func_spec = FuncSpec(
-            conditions=Conditions(
-                colonyname=colonyname, executortype="test-executor-type"
-            ),
+        func_spec = FuncSpec.create(
+            func="test_func",
+            args=[],
+            colonyname=colonyname,
+            executortype="test-executor-type",
             env={"test_key": "test_value2"},
             maxexectime=-1,
             maxretries=3,
@@ -620,16 +623,19 @@ class TestColonies(unittest.TestCase):
         workflow = Workflow(
             colonyname=colonyname,
             functionspecs=[
-                FuncSpec(
+                FuncSpec.create(
+                    func="test_func",
+                    args=[],
                     nodename="node1",
-                    conditions=Conditions(
-                        colonyname=colonyname, executortype="test-executor-type"
-                    ),
+                    colonyname=colonyname,
+                    executortype="test-executor-type",
                     env={"test_key": "test_value2"},
                     maxexectime=-1,
                     maxretries=3,
                 ),
-                FuncSpec(
+                FuncSpec.create(
+                    func="test_func",
+                    args=[],
                     nodename="node2",
                     conditions=Conditions(
                         colonyname=colonyname,

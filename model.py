@@ -1,6 +1,8 @@
 from datetime import datetime
+import base64
+import inspect
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Callable
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 # Base model for all RPC request messages
@@ -48,6 +50,78 @@ class FuncSpec(Model):
     label: Optional[str] = None
     fs: Optional[Fs] = None
     env: Dict[str, str] = {}
+
+    @staticmethod
+    def create(
+        func: str | Callable,
+        args: List[str | int],
+        colonyname: Optional[str] = None,
+        executortype: Optional[str] = None,
+        nodename: Optional[str] = None,
+        executorname: Optional[str] = None,
+        dependencies: Optional[List[str]] = None,
+        priority: int = 1,
+        maxexectime: int = -1,
+        maxretries: int = -1,
+        maxwaittime: int = -1,
+        code: Optional[str] = None,
+        kwargs: Dict[str, str | List[str]] = {},
+        conditions: Optional[Conditions] = None,
+        fs: Optional[Fs] = None,
+        env: Dict[str, str] = {},
+    ) -> 'FuncSpec':
+        if conditions is None \
+                and colonyname is not None \
+                and executortype is not None:
+            conditions = Conditions(
+                colonyname=colonyname,
+                executortype=executortype,
+                dependencies=dependencies or []
+            )
+        else:
+            raise ValueError("Either `conditions` or `colonyname` and `executortype` must be provided.")
+        
+        env = env.copy()
+        if isinstance(func, str):
+            nodename = nodename or func
+            funcname = func
+            if code is not None:
+                code_bytes = code.encode("ascii")
+                code_base64_bytes = base64.b64encode(code_bytes)
+                code_base64 = code_base64_bytes.decode("ascii")
+                env["code"] = code_base64
+        else:
+            code = inspect.getsource(func)
+            code_bytes = code.encode("ascii")
+            code_base64_bytes = base64.b64encode(code_bytes)
+            code_base64 = code_base64_bytes.decode("ascii")
+
+            funcname = func.__name__
+            args_spec = inspect.getfullargspec(func)
+            args_spec_str = ','.join(args_spec.args)
+
+            nodename = nodename or funcname
+            env["args_spec"] = args_spec_str
+            env["code"] = code_base64
+
+        if executorname is not None:
+            conditions.executornames = [ executorname ]
+        
+        # Create instance with all the prepared data
+        return FuncSpec(
+            nodename=nodename,
+            funcname=funcname,
+            args=args,
+            kwargs=kwargs,
+            priority=priority,
+            maxwaittime=maxwaittime,
+            maxexectime=maxexectime,
+            maxretries=maxretries,
+            conditions=conditions,
+            fs=fs,
+            env=env,
+        )
+
 
 
 class Attribute(Model):
