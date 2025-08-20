@@ -2,7 +2,7 @@ pycolonies.egg-info
 dist
 __pycache__/
 *.swp
-build
+build/
 .vscode
 libcryptolib.so
 libcfslib.so
