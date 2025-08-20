@@ -2,10 +2,10 @@ from pycolonies import Crypto
 from pycolonies import colonies_client
 import signal
 import os
-import uuid 
+from typing import Any 
 
 class PythonExecutor:
-    def __init__(self):
+    def __init__(self) -> None:
         colonies, colonyname, colony_prvkey, _, _ = colonies_client()
         self.colonyname = colonyname
         self.colonies = colonies
@@ -17,19 +17,18 @@ class PythonExecutor:
 
         self.register()
         
-    def register(self):
-        executor = {
-            "executorname": "echo-executor",
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": "echo-executor"
-        }
-       
-        self.executorname = executor["executorname"]
+    def register(self) -> None:
+        self.executorname = "echo-executor"
 
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
-            self.colonies.approve_executor(self.colonyname, executor["executorname"], self.colony_prvkey)
+            self.colonies.add_executor(
+                executorid=self.executorid,
+                executorname="echo-executor",
+                executortype="echo-executor",
+                colonyname=self.colonyname,
+                colony_prvkey=self.colony_prvkey
+            )
+            self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
         print("Executor", self.executorname, "registered")
@@ -43,7 +42,7 @@ class PythonExecutor:
         except Exception as err:
             print(err)
    
-    def start(self):
+    def start(self) -> None:
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
@@ -51,7 +50,7 @@ class PythonExecutor:
                 if process.spec.funcname == "echo":
                     # if "in" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
-                    if len(process.input)>0:
+                    if process.input and len(process.input) > 0:
                         args = process.input
                     else:
                         args = process.spec.args
@@ -62,12 +61,13 @@ class PythonExecutor:
                 print(err)
                 pass
 
-    def unregister(self):
+    def unregister(self) -> None:
         self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
         print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
-def sigint_handler(signum, frame):
+def sigint_handler(signum: int, frame: Any) -> None:
+    del signum, frame
     executor.unregister()
 
 if __name__ == '__main__':

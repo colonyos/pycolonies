@@ -1,10 +1,10 @@
 import unittest
 
-from pycolonies import func_spec
+from pycolonies import FuncSpec
 
 
 class TestFuncSpec(unittest.TestCase):
-    def test_func_spec_sets_simple_properties(self):
+    def test_func_spec_sets_simple_properties(self) -> None:
 
         kwargs = {
             "one": "1",
@@ -12,7 +12,7 @@ class TestFuncSpec(unittest.TestCase):
             "three": ["3", "4"]
         }
 
-        spec = func_spec(
+        spec = FuncSpec.create(
             func="sum_nums",
             args=["helloworld"],
             colonyname="colonyname",
@@ -29,9 +29,11 @@ class TestFuncSpec(unittest.TestCase):
         self.assertEqual(spec.funcname, "sum_nums")
         self.assertEqual(spec.args, ["helloworld"])
 
+        assert spec.conditions is not None
         self.assertEqual(spec.conditions.colonyname, "colonyname")
         self.assertEqual(spec.conditions.executortype, "echo_executor")
-        self.assertEqual(spec.conditions.executornames[0], "exec_name")
+        if spec.conditions.executornames is not None:
+            self.assertEqual(spec.conditions.executornames[0], "exec_name")
 
         self.assertEqual(spec.priority, 0)
         self.assertEqual(spec.maxexectime, 10)

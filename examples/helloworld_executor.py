@@ -2,9 +2,10 @@ from pycolonies import Crypto
 from pycolonies import colonies_client
 import signal
 import os
+from typing import Any
 
 class PythonExecutor:
-    def __init__(self):
+    def __init__(self) -> None:
         colonies, colonyname, colony_prvkey, _, _ = colonies_client()
         self.colonies = colonies
         self.colonyname = colonyname
@@ -18,29 +19,18 @@ class PythonExecutor:
 
         self.register()
         
-    def register(self):
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
+    def register(self) -> None:
         try:
-            executor = self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(self.executorid, self.executorname, self.colonyname, self.colony_prvkey)
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
-            
-            self.colonies.add_function(self.colonyname, 
-                                       self.executorname, 
-                                       "helloworld",  
-                                       self.executor_prvkey)
+            self.colonies.add_function(self.colonyname, self.executorname, "helloworld", self.executor_prvkey)
         except Exception as err:
             print(err)
             os._exit(0)
         
         print("Executor", self.executorname, "registered")
         
-    def start(self):
+    def start(self) -> None:
         while (True):
             try:
                 process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
@@ -52,12 +42,13 @@ class PythonExecutor:
                 print(err)
                 pass
 
-    def unregister(self):
+    def unregister(self) -> None:
         self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
         print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
-def sigint_handler(signum, frame):
+def sigint_handler(signum: int, frame: Any) -> None:
+    del signum, frame
     executor.unregister()
 
 if __name__ == '__main__':

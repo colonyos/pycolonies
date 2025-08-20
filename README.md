@@ -60,7 +60,7 @@ INFO[0000] Process submitted                             ProcessID=ea398af346db8
 
 Or using the Python SDK.
 ```python
-spec = func_spec(
+spec = FuncSpec.create(
             func=sum_nums, 
             args=["helloworld"], 
             colonyname=colonyname, 
@@ -151,33 +151,25 @@ Executors are responsible for executing processes. They connect to the Colonies 
 
 Since we have access to the Colony private key (see devenv file), we can implement a self-registering Executor. 
 ```python
+from pycolonies import Colonies, Crypto, rpc
+
 colonies = Colonies("localhost", 50080)
-crypto = Crypto()
 colonyname = "4787a5071856a4acf702b2ffcea422e3237a679c681314113d86139461290cf4"
 colony_prvkey="ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514"
+
+crypto = Crypto()
 executor_prvkey = crypto.prvkey()
 executorid = crypto.id(executor_prvkey)
-
-executor = {
-    "executorname": "echo_executor",
-    "executorid": executorid,
-    "colonyname": colonyname,
-    "executortype": "echo_executor"
-}
-
-colonies.add_executor(executor, colony_prvkey)
-colonies.approve_executor(executorid, colony_prvkey)
+executorname = "echo_executor"
+executortype = "echo_executor"
+colonies.add_executor(executorid, executorname, executortype, colonyname, colony_prvkey)
+colonies.approve_executor(executorname, colonyname, colony_prvkey)
 ```
 
 *Optinally:* We also need to register the `echo` function, telling the Colonies server that this executor is capable of executing a function called `echo`. 
 
 ```python
-colonies.add_function(executorid, 
-                      colonyname, 
-                      "echo",  
-                      ["arg"], 
-                      "Python function that returns its input as output", 
-                      executor_prvkey)
+colonies.add_function(colonyname, executorid, "echo", executor_prvkey)
 ```
 
 The next step is to connect the Colonies server and get process assignments. Note that the Colonies server never establish connections to the Executors, but rather it the responsibility of the Executors to connects to the Colonies server. In this way, Executors may run behind firewalls without problems. The `assign` function below will block for 10 seconds if there are no suitable process to assign.
@@ -214,7 +206,7 @@ code_bytes = code.encode("ascii")
 code_base64_bytes = base64.b64encode(code_bytes)
 code_base64 = code_base64_bytes.decode("ascii")
 
-func_spec = {
+FuncSpec.create = {
     "funcname": "echo",
     "args": ["helloworld"],
     "priority": 0,
@@ -250,7 +242,7 @@ We can now create a distributed Python application where parts of the code runs 
 def sum_nums(n1, n2, ctx={}):
     return n1 + n2
 
-spec = func_spec(
+spec = FuncSpec.create(
             func=sum_nums, 
             args=[1, 2], 
             colonyname=colonyname, 
@@ -330,25 +322,25 @@ def sum_nums(n1, n2, ctx={}):
     return n1 + n2 
 
 wf = Workflow(colonyname=colonyname)
-f = func_spec(func=gen_nums,
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=gen_nums,
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 wf.functionspecs.append(f)
 
-f = func_spec(func=sum_nums, 
-              args=[], 
-              colonyname=colonyname, 
-              executortype="python-executor",
-              priority=200,
-              maxexectime=100,
-              maxretries=3,
-              maxwaittime=100)
+f = FuncSpec.create(func=sum_nums, 
+                    args=[], 
+                    colonyname=colonyname, 
+                    executortype="python-executor",
+                    priority=200,
+                    maxexectime=100,
+                    maxretries=3,
+                    maxwaittime=100)
 
 f.conditions.dependencies.append("gen_nums")
 
@@ -377,7 +369,7 @@ def map(ctx={}):
 
     insert = True
     for i in range(1):
-        f = func_spec(func="gen_nums", 
+        f = FuncSpec.create(func="gen_nums", 
                       args=[], 
                       colonyname=ctx["colonyname"], 
                       executortype="python-executor",
@@ -408,7 +400,7 @@ We can now create a workflow to calculate: `reduce(gen_nums(), gen_nums(), gen_n
 ```python
 wf = Workflow(colonyname=colonyname)
 
-f = func_spec(func=map, 
+f = FuncSpec.create(func=map, 
               args=[], 
               colonyname=colonyname, 
               executortype="python-executor",
@@ -419,7 +411,7 @@ f = func_spec(func=map,
 
 wf.functionspecs.append(f)
 
-f = func_spec(func=reduce, 
+f = FuncSpec.create(func=reduce, 
               args=[], 
               colonyname=colonyname, 
               executortype="python-executor",

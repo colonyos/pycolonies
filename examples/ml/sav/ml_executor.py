@@ -1,6 +1,5 @@
 from crypto import Crypto
 from pycolonies import colonies_client
-from pycolonies import func_spec
 from pycolonies import ColoniesConnectionError
 import signal
 import base64 
@@ -15,6 +14,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import sys
+from typing import Any
 
 from keras import Model
 from keras.callbacks import Callback
@@ -101,7 +101,7 @@ model.load_weights(weights_path)
                 
 
 class PythonExecutor:
-    def __init__(self):
+    def __init__(self) -> None:
         global colonies
         colonies, colonyname, colony_prvkey, _, _ = colonies_client()
         crypto = Crypto()
@@ -123,16 +123,15 @@ class PythonExecutor:
         except Exception as err:
             print(err)
         
-    def register(self):
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
+    def register(self) -> None:
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                self.executorid,
+                self.executorname,
+                self.executortype,
+                self.colonyname,
+                self.colony_prvkey
+            )
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
@@ -140,11 +139,11 @@ class PythonExecutor:
         
         print("Executor", self.executorname, "registered")
    
-    def start(self):
+    def start(self) -> None:
         while (True):
             try:
                 assigned_process = self.colonies.assign(self.colonyname, 10, self.executor_prvkey)
-                img = assigned_process["spec"]["env"]["IMAGE"]
+                img = assigned_process.spec.env["IMAGE"]
                 print(img)
                 self.colonies.sync("/images", "/eurohpc-summit-demo/images", False, self.colonyname, self.executor_prvkey)
                 print("sync completed")
@@ -204,18 +203,19 @@ class PythonExecutor:
                     plt.tight_layout()
                     plt.savefig('/generated/' + img)
                     self.colonies.sync("/generated", "/eurohpc-summit-demo/generated-images", False, self.colonyname, self.executor_prvkey)
-                    self.colonies.close(assigned_process["processid"], [], self.executor_prvkey)
+                    self.colonies.close(assigned_process.processid, [], self.executor_prvkey)
 
             except Exception as err:
                 print("Failed to execute function:", err)
                 continue
 
-    def unregister(self):
+    def unregister(self) -> None:
         self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
         print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
-def sigint_handler(signum, frame):
+def sigint_handler(signum: int, frame: Any) -> None:
+    del signum, frame
     executor.unregister()
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ setuptools.setup(
     author_email="johan.kristiansson@ri.se",
     description="Colonies Python SDK",
     long_description=long_description,
-    py_modules=["pycolonies", "crypto", "cfs", "model"],
+    py_modules=["pycolonies", "crypto", "cfs", "model", "rpc"],
     long_description_content_type="text/markdown",
     url="https://github.com/colonyos/pycolonies",
     packages=setuptools.find_packages(),

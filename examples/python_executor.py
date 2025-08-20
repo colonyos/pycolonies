@@ -1,15 +1,14 @@
 from crypto import Crypto
 from pycolonies import colonies_client
-from pycolonies import func_spec
 from pycolonies import ColoniesConnectionError
 import signal
 import base64 
 import os
-import uuid
 import sys
+from typing import Any, List
 
 class PythonExecutor:
-    def __init__(self):
+    def __init__(self) -> None:
         global colonies
         colonies, colonyname, colony_prvkey, _, _ = colonies_client()
         crypto = Crypto()
@@ -23,16 +22,15 @@ class PythonExecutor:
 
         self.register()
         
-    def register(self):
-        executor = {
-            "executorname": self.executorname,
-            "executorid": self.executorid,
-            "colonyname": self.colonyname,
-            "executortype": self.executortype
-        }
-        
+    def register(self) -> None:
         try:
-            self.colonies.add_executor(executor, self.colony_prvkey)
+            self.colonies.add_executor(
+                executorname=self.executorname,
+                executorid=self.executorid,
+                colonyname=self.colonyname,
+                executortype=self.executortype,
+                colony_prvkey=self.colony_prvkey
+            )
             self.colonies.approve_executor(self.colonyname, self.executorname, self.colony_prvkey)
         except Exception as err:
             print(err)
@@ -40,7 +38,7 @@ class PythonExecutor:
         
         print("Executor", self.executorname, "registered")
    
-    def start(self):
+    def start(self) -> None:
         while (True):
             try:
                 # try to get a process from the colonies server, the call will block for max 10 seconds
@@ -60,14 +58,16 @@ class PythonExecutor:
                 # extract args and call the function code we just injected
                 funcspec = assigned_process.spec
                 funcname = funcspec.funcname
+                assert funcname is not None, "Function name is None"
                 try:
                     self.colonies.add_function(self.colonyname, 
-                                             self.executorname, 
-                                             funcname,  
-                                             self.executor_prvkey)
+                                               self.executorname, 
+                                               funcname,  
+                                               self.executor_prvkey)
                 except Exception as err:
                     print(err)
 
+                args: List[Any] = []
                 try:
                     # if "input" is defined, it is the output of the parent process,
                     # use the output from parent process instead of args
@@ -111,12 +111,13 @@ class PythonExecutor:
             except Exception as err:
                 pass
 
-    def unregister(self):
+    def unregister(self) -> None:
         self.colonies.remove_executor(self.colonyname, self.executorname, self.colony_prvkey)
         print("Executor", self.executorname, "unregistered")
         os._exit(0)
 
-def sigint_handler(signum, frame):
+def sigint_handler(signum: int, frame: Any) -> None:
+    del signum, frame
     executor.unregister()
 
 if __name__ == '__main__':
