@@ -119,9 +119,7 @@ jobs:
         AWS_S3_TLS: "false"
         AWS_S3_SKIPVERIFY: "false"
         AWS_S3_BUCKET: test
-      run: |
-        coverage run --source=. --omit="test/*,setup.py" -m pytest test/ -v
-        coverage xml
+      run: pytest --cov=. --cov-branch --cov-report=xml --cov-report=term -v
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
