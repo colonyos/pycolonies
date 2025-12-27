@@ -77,7 +77,23 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Test
+    - name: Install dependencies
+      run: pip3 install -r requirements.txt
+
+    - name: Setup test environment
+      env:
+        COLONIES_TLS: "false"
+        COLONIES_SERVER_HOST: localhost
+        COLONIES_SERVER_PORT: 50080
+        COLONIES_SERVER_PRVKEY: fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d
+        COLONIES_COLONY_NAME: test
+        COLONIES_COLONY_PRVKEY: ba949fa134981372d6da62b6a56f336ab4d843b22c02a4257dcf7d0d73097514
+        COLONIES_PRVKEY: ddf7f7791208083b6a9ed975a72684f6406a269cfa36f1b1c32045c0a71fff05
+        COLONIES_EXECUTOR_TYPE: cli
+        CRYPTOLIB: /home/runner/work/pycolonies/pycolonies/lib/libcryptolib.so
+      run: python3 ./test/setup_test_env.py
+
+    - name: Run tests with coverage
       env:
         LANG: en_US.UTF-8
         LANGUAGE: en_US.UTF-8
@@ -103,4 +119,15 @@ jobs:
         AWS_S3_TLS: "false"
         AWS_S3_SKIPVERIFY: "false"
         AWS_S3_BUCKET: test
-      run: make github_test
+      run: |
+        coverage run --source=. --omit="test/*,setup.py" -m pytest test/ -v
+        coverage xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

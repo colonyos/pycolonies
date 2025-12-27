@@ -1,4 +1,8 @@
 [![Python3](https://github.com/colonyos/pycolonies/actions/workflows/python.yml/badge.svg)](https://github.com/colonyos/pycolonies/actions/workflows/python.yml)
+[![codecov](https://codecov.io/gh/colonyos/pycolonies/branch/main/graph/badge.svg)](https://codecov.io/gh/colonyos/pycolonies)
+[![PyPI version](https://badge.fury.io/py/pycolonies.svg)](https://badge.fury.io/py/pycolonies)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # PyColonies
 
