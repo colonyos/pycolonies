@@ -2,11 +2,14 @@ import unittest
 import string
 import random
 import sys
-sys.path.append(".")
+import os
+
+# Prioritize local source over installed package
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from crypto import Crypto
 from pycolonies import Colonies
 from model import FuncSpec, Conditions, Workflow
-import os
 
 test_colony_host = os.environ.get('TEST_COLONY_HOST', 'localhost')
 test_colony_prvkey = os.environ.get('TEST_COLONY_PRVKEY', 'fcc79953d8a751bf41db661592dc34d30004b1a651ffa0725b03ac227641499d')

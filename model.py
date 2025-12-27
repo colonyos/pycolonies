@@ -43,6 +43,7 @@ class FuncSpec(BaseModel):
     label: str = ""
     fs: Fs | None = Fs(mount="", snapshots=None, dirs=None)
     env: Dict[str, str] = {}
+    channels: List[str] = []
 
 
 class Attribute(BaseModel):

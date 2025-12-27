@@ -1,6 +1,6 @@
 all: build
 
-.PHONY: build 
+.PHONY: build
 build:
 	python3 setup.py sdist bdist_wheel
 
@@ -8,23 +8,35 @@ build:
 test:
 	@python3 ./test/crypto_test.py
 	@python3 ./test/colonies_test.py
+	@python3 ./test/channel_test.py
+	@python3 ./test/blueprint_test.py
+	@python3 ./test/api_test.py
+
+.PHONY: setup
+setup:
+	@pip3 install -r requirements.txt
+	@python3 ./test/setup_test_env.py
 
 .PHONY: github_test
 github_test:
-	wget https://github.com/colonyos/colonies/releases/download/v1.8.7/colonies_1.8.7_linux_amd64.tar.gz
-	tar -xzf colonies_1.8.7_linux_amd64.tar.gz
-	env
-	./colonies database create
-	./colonies colony add --name ${COLONIES_COLONY_NAME} --colonyid ${COLONIES_COLONY_ID} 
-	./colonies executor add --spec ./executor.json --executorid ${COLONIES_EXECUTOR_ID}
-	./colonies executor approve --name ${COLONIES_EXECUTOR_NAME}
 	@pip3 install -r requirements.txt
+	@python3 ./test/setup_test_env.py
 	@python3 ./test/crypto_test.py
 	@python3 ./test/colonies_test.py
+	@python3 ./test/channel_test.py
+	@python3 ./test/blueprint_test.py
+	@python3 ./test/api_test.py
 
 .PHONY: install
 install:
-	pip3 install dist/pycolonies-1.0.24-py3-none-any.whl --force-reinstall 
+	pip3 install dist/pycolonies-1.0.25-py3-none-any.whl --force-reinstall
 
+.PHONY: publish
 publish:
-	python3 -m twine upload dist/pycolonies-1.0.24-py3-none-any.whl 
+	python3 -m twine upload dist/pycolonies-1.0.25-py3-none-any.whl
+
+.PHONY: clean
+clean:
+	rm -rf build dist *.egg-info __pycache__ .pytest_cache
+	find . -name "*.pyc" -delete
+	find . -name "__pycache__" -type d -delete

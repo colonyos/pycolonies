@@ -1,6 +1,10 @@
 import unittest
 import sys
-sys.path.append(".")
+import os
+
+# Prioritize local source over installed package
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from crypto import Crypto
 from crypto import jacobian_add, jacobian_double, fast_multiply
 

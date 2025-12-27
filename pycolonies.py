@@ -215,7 +215,25 @@ class Colonies:
             "colonyname": colonyname
         }
         return self.__rpc(msg, prvkey)
-    
+
+    def get_executor(self, colonyname, executorname, prvkey):
+        """Get details about a specific executor.
+
+        Args:
+            colonyname: Name of the colony
+            executorname: Name of the executor
+            prvkey: Private key for authentication
+
+        Returns:
+            Executor details
+        """
+        msg = {
+            "msgtype": "getexecutormsg",
+            "colonyname": colonyname,
+            "executorname": executorname
+        }
+        return self.__rpc(msg, prvkey)
+
     def approve_executor(self, colonyname, executorname, prvkey):
         msg = {
             "msgtype": "approveexecutormsg",
@@ -350,7 +368,93 @@ class Colonies:
         }
         graph = self.__rpc(msg, prvkey)
         return ProcessGraph(**graph)
-    
+
+    def get_processgraphs(self, colonyname, count, prvkey, state=None):
+        """Get process graphs (workflows) in a colony.
+
+        Args:
+            colonyname: Name of the colony
+            count: Maximum number to return
+            prvkey: Private key for authentication
+            state: Optional state filter (0=waiting, 1=running, 2=success, 3=failed)
+
+        Returns:
+            List of process graphs
+        """
+        msg = {
+            "msgtype": "getprocessgraphsmsg",
+            "colonyname": colonyname,
+            "count": count
+        }
+        if state is not None:
+            msg["state"] = state
+        return self.__rpc(msg, prvkey)
+
+    def remove_processgraph(self, processgraphid, prvkey):
+        """Remove a process graph (workflow).
+
+        Args:
+            processgraphid: ID of the process graph to remove
+            prvkey: Private key for authentication
+        """
+        msg = {
+            "msgtype": "removeprocessgraphmsg",
+            "processgraphid": processgraphid
+        }
+        return self.__rpc(msg, prvkey)
+
+    def remove_all_processgraphs(self, colonyname, prvkey, state=None):
+        """Remove all process graphs in a colony.
+
+        Args:
+            colonyname: Name of the colony
+            prvkey: Private key for authentication
+            state: Optional state filter
+        """
+        msg = {
+            "msgtype": "removeallprocessgraphsmsg",
+            "colonyname": colonyname
+        }
+        if state is not None:
+            msg["state"] = state
+        return self.__rpc(msg, prvkey)
+
+    def get_processes_for_workflow(self, processgraphid, colonyname, prvkey, count=100):
+        """Get all processes belonging to a workflow.
+
+        Args:
+            processgraphid: ID of the process graph
+            colonyname: Name of the colony
+            prvkey: Private key for authentication
+            count: Maximum number to return
+
+        Returns:
+            List of processes in the workflow
+        """
+        msg = {
+            "msgtype": "getprocessesmsg",
+            "processgraphid": processgraphid,
+            "colonyname": colonyname,
+            "count": count,
+            "state": -1
+        }
+        return self.__rpc(msg, prvkey)
+
+    def remove_all_processes(self, colonyname, prvkey, state=-1):
+        """Remove all processes in a colony.
+
+        Args:
+            colonyname: Name of the colony
+            prvkey: Private key for authentication
+            state: Optional state filter (-1 for all)
+        """
+        msg = {
+            "msgtype": "removeallprocessesmsg",
+            "colonyname": colonyname,
+            "state": state
+        }
+        return self.__rpc(msg, prvkey)
+
     def add_function(self, colonyname, executorname, funcname, prvkey):
         func = {}
         func["executorname"] = executorname
@@ -529,6 +633,155 @@ class Colonies:
                 "all": False,
                 "cronid": cronid
             }
+        return self.__rpc(msg, prvkey)
+
+    def run_cron(self, cronid, prvkey):
+        """Manually trigger a cron job.
+
+        Args:
+            cronid: The cron ID to run
+            prvkey: Private key for authentication
+
+        Returns:
+            The triggered process
+        """
+        msg = {
+            "msgtype": "runcronmsg",
+            "cronid": cronid
+        }
+        return self.__rpc(msg, prvkey)
+
+    # Generator methods
+    def get_generators(self, colonyname, prvkey, count=100):
+        """Get all generators in a colony.
+
+        Args:
+            colonyname: Name of the colony
+            prvkey: Private key for authentication
+            count: Maximum number to return
+
+        Returns:
+            List of generators
+        """
+        msg = {
+            "msgtype": "getgeneratorsmsg",
+            "colonyname": colonyname,
+            "count": count
+        }
+        return self.__rpc(msg, prvkey)
+
+    def get_generator(self, generatorid, prvkey):
+        """Get a specific generator by ID.
+
+        Args:
+            generatorid: The generator ID
+            prvkey: Private key for authentication
+
+        Returns:
+            Generator details
+        """
+        msg = {
+            "msgtype": "getgeneratormsg",
+            "generatorid": generatorid
+        }
+        return self.__rpc(msg, prvkey)
+
+    def add_generator(self, generator, prvkey):
+        """Add a new generator.
+
+        Args:
+            generator: Generator specification object
+            prvkey: Private key for authentication
+
+        Returns:
+            The created generator
+        """
+        msg = {
+            "msgtype": "addgeneratormsg",
+            "generator": generator
+        }
+        return self.__rpc(msg, prvkey)
+
+    def remove_generator(self, generatorid, prvkey):
+        """Remove a generator.
+
+        Args:
+            generatorid: The generator ID to remove
+            prvkey: Private key for authentication
+        """
+        msg = {
+            "msgtype": "removegeneratormsg",
+            "generatorid": generatorid
+        }
+        return self.__rpc(msg, prvkey)
+
+    # User methods
+    def get_users(self, colonyname, prvkey):
+        """Get all users in a colony.
+
+        Args:
+            colonyname: Name of the colony
+            prvkey: Private key for authentication
+
+        Returns:
+            List of users
+        """
+        msg = {
+            "msgtype": "getusersmsg",
+            "colonyname": colonyname
+        }
+        return self.__rpc(msg, prvkey)
+
+    def add_user(self, user, prvkey):
+        """Add a new user to a colony.
+
+        Args:
+            user: User object with colonyname, userid, name, email, phone
+            prvkey: Private key for authentication (colony owner)
+
+        Returns:
+            The created user
+        """
+        msg = {
+            "msgtype": "addusermsg",
+            "user": user
+        }
+        return self.__rpc(msg, prvkey)
+
+    def remove_user(self, colonyname, name, prvkey):
+        """Remove a user from a colony.
+
+        Args:
+            colonyname: Name of the colony
+            name: Name of the user to remove
+            prvkey: Private key for authentication (colony owner)
+        """
+        msg = {
+            "msgtype": "removeusermsg",
+            "colonyname": colonyname,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+
+    # File label methods
+    def get_file_labels(self, colonyname, prvkey, name="", exact=False):
+        """Get file labels in a colony.
+
+        Args:
+            colonyname: Name of the colony
+            prvkey: Private key for authentication
+            name: Optional name filter
+            exact: If True, match name exactly
+
+        Returns:
+            List of file labels
+        """
+        msg = {
+            "msgtype": "getfilelabelsmsg",
+            "colonyname": colonyname,
+            "name": name,
+            "exact": exact
+        }
         return self.__rpc(msg, prvkey)
 
     def __generate_random_id(self):
@@ -862,3 +1115,360 @@ class Colonies:
             raise e
 
         self.__remove_file(label, fileid, filename, colonyname, prvkey)
+
+    # Channel methods
+    def channel_append(self, processid, channel_name, sequence, payload, prvkey, in_reply_to=0, payload_type=""):
+        """Append a message to a channel.
+
+        Args:
+            processid: The process ID that owns the channel
+            channel_name: Name of the channel
+            sequence: Client-assigned sequence number
+            payload: Message payload (bytes or string)
+            prvkey: Private key for authentication
+            in_reply_to: Optional sequence number this message replies to
+            payload_type: Optional message type ("", "end", "error")
+        """
+        if isinstance(payload, str):
+            payload = payload.encode('utf-8')
+
+        # Convert payload to array of bytes (like colonies-ts does)
+        payload_array = list(payload)
+
+        msg = {
+            "msgtype": "channelappendmsg",
+            "processid": processid,
+            "name": channel_name,
+            "sequence": sequence,
+            "inreplyto": in_reply_to,
+            "payload": payload_array,
+            "payloadtype": payload_type
+        }
+        return self.__rpc(msg, prvkey)
+
+    def channel_read(self, processid, channel_name, after_seq, limit, prvkey):
+        """Read messages from a channel.
+
+        Args:
+            processid: The process ID that owns the channel
+            channel_name: Name of the channel
+            after_seq: Read messages after this sequence number (0 for all)
+            limit: Maximum number of messages to return (0 for no limit)
+            prvkey: Private key for authentication
+
+        Returns:
+            List of message entries with payload as bytes
+        """
+        msg = {
+            "msgtype": "channelreadmsg",
+            "processid": processid,
+            "name": channel_name,
+            "afterseq": after_seq,
+            "limit": limit
+        }
+        entries = self.__rpc(msg, prvkey)
+
+        # Decode payloads - could be array of ints or base64 string
+        if entries:
+            for entry in entries:
+                if 'payload' in entry and entry['payload']:
+                    payload = entry['payload']
+                    if isinstance(payload, list):
+                        # Array of bytes
+                        entry['payload'] = bytes(payload)
+                    elif isinstance(payload, str):
+                        # Base64 encoded string
+                        entry['payload'] = base64.b64decode(payload)
+
+        return entries
+
+    def subscribe_channel(self, processid, channel_name, prvkey, after_seq=0, timeout=30, callback=None):
+        """Subscribe to channel messages via WebSocket.
+
+        Args:
+            processid: The process ID that owns the channel
+            channel_name: Name of the channel
+            prvkey: Private key for authentication
+            after_seq: Start reading after this sequence number
+            timeout: Timeout in seconds
+            callback: Optional callback function(entries) called for each batch of messages.
+                     If callback returns False, subscription ends.
+                     If None, blocks and returns all messages when timeout or stream ends.
+
+        Returns:
+            If callback is None, returns list of all received messages
+        """
+        msg = {
+            "processid": processid,
+            "name": channel_name,
+            "afterseq": after_seq,
+            "timeout": timeout,
+            "msgtype": "subscribechannelmsg"
+        }
+
+        rpcmsg = {
+            "payloadtype": msg["msgtype"],
+            "payload": "",
+            "signature": ""
+        }
+
+        rpcmsg["payload"] = str(base64.b64encode(json.dumps(msg).encode('utf-8')), "utf-8")
+        crypto = Crypto()
+        rpcmsg["signature"] = crypto.sign(rpcmsg["payload"], prvkey)
+
+        if self.tls:
+            ws = create_connection("wss://" + self.host + ":" + str(self.port) + "/pubsub")
+        else:
+            ws = create_connection("ws://" + self.host + ":" + str(self.port) + "/pubsub")
+
+        ws.send(json.dumps(rpcmsg))
+
+        all_entries = []
+        try:
+            while True:
+                data = ws.recv()
+                reply_msg = json.loads(data)
+
+                if reply_msg.get("error"):
+                    payload_bytes = base64.b64decode(reply_msg["payload"])
+                    error_msg = json.loads(payload_bytes)
+                    raise ColoniesError(error_msg.get("message", "Channel subscription error"))
+
+                payload_bytes = base64.b64decode(reply_msg["payload"])
+                entries = json.loads(payload_bytes)
+
+                # Decode payloads in entries - could be array of ints or base64 string
+                if entries:
+                    for entry in entries:
+                        if 'payload' in entry and entry['payload']:
+                            payload = entry['payload']
+                            if isinstance(payload, list):
+                                entry['payload'] = bytes(payload)
+                            elif isinstance(payload, str):
+                                entry['payload'] = base64.b64decode(payload)
+
+                    if callback:
+                        if callback(entries) == False:
+                            break
+                    else:
+                        all_entries.extend(entries)
+                else:
+                    # Empty response indicates timeout
+                    break
+        finally:
+            ws.close()
+
+        if callback is None:
+            return all_entries
+
+    # Blueprint Definition methods
+    def add_blueprint_definition(self, definition, prvkey):
+        """Add a blueprint definition.
+
+        Args:
+            definition: Blueprint definition object with kind, metadata, spec
+            prvkey: Private key for authentication (colony owner key required)
+
+        Returns:
+            The created blueprint definition
+        """
+        msg = {
+            "msgtype": "addblueprintdefinitionmsg",
+            "blueprintdefinition": definition
+        }
+        return self.__rpc(msg, prvkey)
+
+    def get_blueprint_definition(self, colony_name, name, prvkey):
+        """Get a blueprint definition by name.
+
+        Args:
+            colony_name: Name of the colony
+            name: Name of the blueprint definition
+            prvkey: Private key for authentication
+
+        Returns:
+            The blueprint definition
+        """
+        msg = {
+            "msgtype": "getblueprintdefinitionmsg",
+            "colonyname": colony_name,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+
+    def get_blueprint_definitions(self, colony_name, prvkey):
+        """Get all blueprint definitions in a colony.
+
+        Args:
+            colony_name: Name of the colony
+            prvkey: Private key for authentication
+
+        Returns:
+            List of blueprint definitions
+        """
+        msg = {
+            "msgtype": "getblueprintdefinitionsmsg",
+            "colonyname": colony_name
+        }
+        return self.__rpc(msg, prvkey)
+
+    def remove_blueprint_definition(self, colony_name, name, prvkey):
+        """Remove a blueprint definition.
+
+        Args:
+            colony_name: Name of the colony (namespace)
+            name: Name of the blueprint definition to remove
+            prvkey: Private key for authentication (colony owner key required)
+        """
+        msg = {
+            "msgtype": "removeblueprintdefinitionmsg",
+            "namespace": colony_name,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+
+    # Blueprint methods
+    def add_blueprint(self, blueprint, prvkey):
+        """Add a blueprint instance.
+
+        Args:
+            blueprint: Blueprint object with kind, metadata, handler, spec
+            prvkey: Private key for authentication
+
+        Returns:
+            The created blueprint
+        """
+        msg = {
+            "msgtype": "addblueprintmsg",
+            "blueprint": blueprint
+        }
+        return self.__rpc(msg, prvkey)
+
+    def get_blueprint(self, colony_name, name, prvkey):
+        """Get a blueprint by name.
+
+        Args:
+            colony_name: Name of the colony (namespace)
+            name: Name of the blueprint
+            prvkey: Private key for authentication
+
+        Returns:
+            The blueprint
+        """
+        msg = {
+            "msgtype": "getblueprintmsg",
+            "namespace": colony_name,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+
+    def get_blueprints(self, colony_name, prvkey, kind=None, location=None):
+        """Get blueprints in a colony, optionally filtered.
+
+        Args:
+            colony_name: Name of the colony (namespace)
+            prvkey: Private key for authentication
+            kind: Optional kind filter
+            location: Optional location filter
+
+        Returns:
+            List of blueprints
+        """
+        msg = {
+            "msgtype": "getblueprintsmsg",
+            "namespace": colony_name
+        }
+        if kind:
+            msg["kind"] = kind
+        if location:
+            msg["locationname"] = location
+        return self.__rpc(msg, prvkey)
+
+    def update_blueprint(self, blueprint, prvkey, force_generation=False):
+        """Update an existing blueprint.
+
+        Args:
+            blueprint: Updated blueprint object
+            prvkey: Private key for authentication
+            force_generation: Force generation bump even if spec unchanged
+
+        Returns:
+            The updated blueprint
+        """
+        msg = {
+            "msgtype": "updateblueprintmsg",
+            "blueprint": blueprint,
+            "forcegeneration": force_generation
+        }
+        return self.__rpc(msg, prvkey)
+
+    def remove_blueprint(self, colony_name, name, prvkey):
+        """Remove a blueprint.
+
+        Args:
+            colony_name: Name of the colony (namespace)
+            name: Name of the blueprint to remove
+            prvkey: Private key for authentication
+        """
+        msg = {
+            "msgtype": "removeblueprintmsg",
+            "namespace": colony_name,
+            "name": name
+        }
+        return self.__rpc(msg, prvkey)
+
+    def update_blueprint_status(self, colony_name, name, status, prvkey):
+        """Update blueprint status (current state).
+
+        Args:
+            colony_name: Name of the colony
+            name: Name of the blueprint
+            status: Status object representing current state
+            prvkey: Private key for authentication
+        """
+        msg = {
+            "msgtype": "updateblueprintstatusmsg",
+            "colonyname": colony_name,
+            "blueprintname": name,
+            "status": status
+        }
+        return self.__rpc(msg, prvkey)
+
+    def reconcile_blueprint(self, colony_name, name, prvkey, force=False):
+        """Trigger reconciliation for a blueprint.
+
+        Args:
+            colony_name: Name of the colony (namespace)
+            name: Name of the blueprint
+            prvkey: Private key for authentication
+            force: Force reconciliation even if no changes detected
+
+        Returns:
+            The reconciliation process
+        """
+        msg = {
+            "msgtype": "reconcileblueprintmsg",
+            "namespace": colony_name,
+            "name": name,
+            "force": force
+        }
+        return self.__rpc(msg, prvkey)
+
+    def get_blueprint_history(self, blueprint_id, prvkey, limit=None):
+        """Get the history of changes for a specific blueprint.
+
+        Args:
+            blueprint_id: ID of the blueprint
+            prvkey: Private key for authentication
+            limit: Optional limit on number of history entries
+
+        Returns:
+            List of blueprint history entries
+        """
+        msg = {
+            "msgtype": "getblueprinthistorymsg",
+            "blueprintid": blueprint_id
+        }
+        if limit is not None:
+            msg["limit"] = limit
+        return self.__rpc(msg, prvkey)
