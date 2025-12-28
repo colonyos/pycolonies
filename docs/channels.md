@@ -352,6 +352,166 @@ client.subscribe_channel(
 )
 ```
 
+## Sync Channels for Reliable Completion
+
+When a process closes, its channels are immediately cleaned up. This can cause race conditions where clients miss the final messages. Use a sync channel to ensure reliable completion.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    participant E as Executor
+
+    Note over C,E: Problem: Client may miss final messages
+    E->>S: channel_append("final result")
+    E->>S: close(process)
+    Note over S: Channel cleaned up immediately
+    C->>S: channel_read()
+    S-->>C: Error: Channel not found
+```
+
+### The Solution: Acknowledgment Pattern
+
+Use a dedicated sync channel where the client acknowledges receipt of all messages before the executor closes the process:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    participant E as Executor
+
+    E->>S: channel_append("data", "chunk 1")
+    S-->>C: chunk 1
+    E->>S: channel_append("data", "chunk 2")
+    S-->>C: chunk 2
+    E->>S: channel_append("sync", type="end")
+    S-->>C: end signal
+
+    Note over C: Client received all data
+    C->>S: channel_append("sync", "ack")
+    S-->>E: ack received
+
+    Note over E: Safe to close now
+    E->>S: close(process)
+```
+
+### Implementation
+
+#### Executor Code
+
+```python
+from pycolonies import Colonies
+import time
+
+client = Colonies("localhost", 50080, tls=False)
+prvkey = "executor_private_key"
+
+# Assign process with both data and sync channels
+process = client.assign("my_colony", 60, prvkey)
+
+if process:
+    # Send data through data channel
+    for i, chunk in enumerate(["chunk1", "chunk2", "chunk3"]):
+        client.channel_append(
+            process.processid, "data", i + 1,
+            chunk, prvkey
+        )
+
+    # Signal end of data stream
+    client.channel_append(
+        process.processid, "sync", 1,
+        "", prvkey,
+        payload_type="end"
+    )
+
+    # Wait for client acknowledgment before closing
+    ack_received = False
+    timeout = 30  # seconds
+    start = time.time()
+
+    while not ack_received and (time.time() - start) < timeout:
+        entries = client.channel_read(
+            process.processid, "sync", 1, 10, prvkey
+        )
+        for entry in entries:
+            if entry['payload'].decode() == "ack":
+                ack_received = True
+                break
+        if not ack_received:
+            time.sleep(0.1)
+
+    # Now safe to close - client has all data
+    client.close(process.processid, ["Done"], prvkey)
+```
+
+#### Client Code
+
+```python
+from pycolonies import Colonies
+import threading
+
+client = Colonies("localhost", 50080, tls=False)
+prvkey = "client_private_key"
+
+# Subscribe to data channel
+all_data = []
+end_received = threading.Event()
+
+def on_data(entries):
+    for entry in entries:
+        if entry.get('type') == 'end':
+            end_received.set()
+            return False  # Stop subscription
+        all_data.append(entry['payload'].decode())
+    return True
+
+# Start listening for data
+def listen_data():
+    client.subscribe_channel(
+        process.processid, "data", prvkey,
+        timeout=60, callback=on_data
+    )
+
+listener = threading.Thread(target=listen_data)
+listener.start()
+
+# Also subscribe to sync channel for end signal
+def on_sync(entries):
+    for entry in entries:
+        if entry.get('type') == 'end':
+            end_received.set()
+            return False
+    return True
+
+def listen_sync():
+    client.subscribe_channel(
+        process.processid, "sync", prvkey,
+        timeout=60, callback=on_sync
+    )
+
+sync_listener = threading.Thread(target=listen_sync)
+sync_listener.start()
+
+# Wait for end signal
+end_received.wait(timeout=60)
+
+# Send acknowledgment - executor will wait for this before closing
+client.channel_append(
+    process.processid, "sync", 100,
+    "ack", prvkey
+)
+
+print(f"Received {len(all_data)} chunks: {all_data}")
+```
+
+### Key Points
+
+1. **Two channels**: Use separate channels for data and synchronization
+2. **End signal**: Executor sends `type="end"` when all data is sent
+3. **Acknowledgment**: Client sends "ack" after receiving end signal
+4. **Wait before close**: Executor waits for ack before calling `close()`
+5. **Timeout handling**: Always include timeouts to prevent indefinite waiting
+
 ## Important Notes
 
 1. **Process must be running**: Channels are only available after a process is assigned (state = RUNNING). The channel is created lazily when first accessed after assignment.
@@ -360,7 +520,7 @@ client.subscribe_channel(
 
 3. **Message ordering**: Messages are stored in order by (sender_id, sequence). Use `inreplyto` to create explicit request-response correlations.
 
-4. **Channel cleanup**: Channels are automatically cleaned up when a process is closed (SUCCESS or FAILED state).
+4. **Channel cleanup**: Channels are automatically cleaned up when a process is closed (SUCCESS or FAILED state). Use the sync channel pattern above to ensure clients receive all messages before cleanup.
 
 5. **Authorization**: Only the process submitter and the assigned executor can read/write to a process's channels.
 
